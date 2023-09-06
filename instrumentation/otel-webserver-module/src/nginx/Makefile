@@ -1,8 +1,9 @@
 
 CC =	cc
+CXX =	g++
 CFLAGS =  -pipe  -O -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g -Wno-error -Wno-unused-variable -Wno-unused-but-set-variable
 CPP =	cc -E
-LINK =	$(CC)
+LINK =	$(CXX)
 
 
 ALL_INCS = -I src/core \
@@ -1226,10 +1227,10 @@ objs/addon/nginx/ngx_http_opentelemetry_log.o:	$(ADDON_DEPS) \
 
 
 objs/addon/nginx/ngx_http_opentelemetry_module.o:	$(ADDON_DEPS) \
-	../../src/nginx/ngx_http_opentelemetry_module.c
+	ngx_http_opentelemetry_module.cpp
 	$(CC) -c -fPIC $(CFLAGS) $(ALL_INCS) \
 		-o objs/addon/nginx/ngx_http_opentelemetry_module.o \
-		../../src/nginx/ngx_http_opentelemetry_module.c
+		../../src/nginx/ngx_http_opentelemetry_module.cpp
 
 
 manpage:	objs/nginx.8

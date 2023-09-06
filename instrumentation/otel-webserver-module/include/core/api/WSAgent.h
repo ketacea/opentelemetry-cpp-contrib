@@ -53,7 +53,7 @@ public:
         OTEL_SDK_ENV_RECORD* env,
         unsigned numberOfRecords);
 
-    OTEL_SDK_STATUS_CODE term();
+    void term();
 
     OTEL_SDK_STATUS_CODE startRequest(
         const char* wscontext,

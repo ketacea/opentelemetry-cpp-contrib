@@ -32,6 +32,12 @@ AgentKernel::initKernel(std::shared_ptr<TenantConfig> config,
     mRequestProcessingEngine->init(config, spanNamer);
 }
 
+void
+AgentKernel::stop()
+{
+    mRequestProcessingEngine->stop();
+}
+
 IRequestProcessingEngine*
 AgentKernel::getRequestProcessingEngine()
 {
@@ -49,6 +55,12 @@ WebServerContext::initContext(std::shared_ptr<SpanNamer> spanNamer)
 {
     mAgentKernel.reset(new AgentKernel());
     mAgentKernel->initKernel(mTenantConfig, spanNamer);
+}
+
+void
+WebServerContext::stop()
+{
+    mAgentKernel->stop();
 }
 
 bool
@@ -95,9 +107,11 @@ TenantConfig::copyAllExceptNamespaceNameId(const TenantConfig& copyfrom)
     serviceInstanceId = oldServiceInstanceId;
 }
 
-void
-AgentCore::stop()
+void AgentCore::stop()
 {
+    for (auto it = mWebServerContexts.begin(); it != mWebServerContexts.end(); it++) {
+        (it -> second)->stop();
+    }
     LOG4CXX_INFO(mLogger, "AgentCore Stopped.");
     mLogger = nullptr;
 }

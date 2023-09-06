@@ -79,6 +79,7 @@ OTEL_SDK_STATUS_CODE startRequest(const char* wscontext, request_payload* req_pa
 OTEL_SDK_STATUS_CODE startModuleInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, const char* module_name, const char* stage, bool resolveBackends, OTEL_SDK_ENV_RECORD* propagationHeaders, int* ix);
 OTEL_SDK_STATUS_CODE stopModuleInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, const char* backendName, const char* backendType, unsigned int err_code, const char* msg);
 OTEL_SDK_STATUS_CODE endRequest(OTEL_SDK_HANDLE_REQ req_handle_key, const char* errMsg, response_payload* payload);
+void opentelemetry_core_term();
 
 #ifdef	__cplusplus
 }

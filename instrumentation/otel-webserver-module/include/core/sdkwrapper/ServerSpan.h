@@ -17,6 +17,7 @@
 #ifndef __SERVERSPAN_H
 #define __SERVERSPAN_H
 
+#include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>
 #include "sdkwrapper/IScopedSpan.h"
 #include <opentelemetry/trace/tracer.h>
 #include <opentelemetry/trace/span.h>

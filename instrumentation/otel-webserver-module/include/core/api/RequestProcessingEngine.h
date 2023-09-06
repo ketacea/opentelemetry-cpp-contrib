@@ -45,6 +45,7 @@ public:
     virtual ~IRequestProcessingEngine() {}
     virtual void init(std::shared_ptr<TenantConfig>& config,
         std::shared_ptr<SpanNamer> spanNamer) = 0;
+    virtual void stop() = 0;
     virtual OTEL_SDK_STATUS_CODE startRequest(
         const std::string& wscontext,
         RequestPayload* payload,
@@ -71,6 +72,7 @@ public:
 
     void init(std::shared_ptr<TenantConfig>& config,
         std::shared_ptr<SpanNamer> spanNamer) override;
+    void stop() override;
     OTEL_SDK_STATUS_CODE startRequest(
         const std::string& wscontext,
         RequestPayload* payload,

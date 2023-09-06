@@ -42,6 +42,8 @@ public:
     void initKernel(std::shared_ptr<otel::core::TenantConfig> config,
         std::shared_ptr<otel::core::SpanNamer> spanNamer) override;
 
+    void stop() override;
+
     IRequestProcessingEngine* getRequestProcessingEngine() override;
 
 private:
@@ -63,7 +65,7 @@ public:
     ~WebServerContext() = default;
 
     void initContext(std::shared_ptr<otel::core::SpanNamer> spanNamer) override;
-
+    void stop() override;
     IKernel* getKernel() const override { return mAgentKernel.get();}
     std::shared_ptr<otel::core::TenantConfig> getConfig() override { return mTenantConfig;}
 

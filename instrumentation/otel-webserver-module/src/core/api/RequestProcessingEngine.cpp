@@ -50,6 +50,10 @@ void RequestProcessingEngine::init(std::shared_ptr<TenantConfig>& config,
     m_spanNamer = spanNamer;
 }
 
+void RequestProcessingEngine::stop() {
+    m_sdkWrapper->Stop();
+}
+
 OTEL_SDK_STATUS_CODE RequestProcessingEngine::startRequest(
     const std::string& wscontext,
     RequestPayload* payload,
@@ -64,17 +68,35 @@ OTEL_SDK_STATUS_CODE RequestProcessingEngine::startRequest(
         return OTEL_STATUS(payload_reflector_is_null);
     }
 
-    std::string spanName = m_spanNamer->getSpanName(payload->get_uri());
+    std::string uri(payload->get_uri());
+    std::string spanName = m_spanNamer->getSpanName(uri);
     otel::core::sdkwrapper::OtelKeyValueMap keyValueMap;
-    keyValueMap[kAttrRequestProtocol] = payload->get_request_protocol();
-    keyValueMap[kAttrHTTPServerName] = payload->get_server_name();
-    keyValueMap[kAttrHTTPMethod] = payload->get_http_request_method();
-    keyValueMap[kAttrHTTPScheme] = payload->get_scheme();
-    keyValueMap[kAttrNetHostName] = payload->get_host();
+
+    std::string protocol(payload->get_request_protocol());
+    keyValueMap[kAttrRequestProtocol] = protocol;
+
+    std::string server_name(payload->get_server_name());
+    keyValueMap[kAttrHTTPServerName] = server_name;
+
+    std::string method(payload->get_http_request_method());
+    keyValueMap[kAttrHTTPMethod] = method;
+
+    std::string scheme(payload->get_scheme());
+    keyValueMap[kAttrHTTPScheme] = scheme;
+
+    std::string host(payload->get_host());
+    keyValueMap[kAttrNetHostName] = host;
+
     keyValueMap[kAttrNETHostPort] = payload->get_port();
-    keyValueMap[kAttrHTTPTarget] =payload->get_target();
-    keyValueMap[kAttrHTTPFlavor] = payload->get_flavor();
-    keyValueMap[kAttrHTTPClientIP] = payload->get_client_ip();
+
+    std::string target(payload->get_target());
+    keyValueMap[kAttrHTTPTarget] = target;
+
+    std::string flavor(payload->get_flavor());
+    keyValueMap[kAttrHTTPFlavor] = flavor;
+
+    std::string client_ip(payload->get_client_ip());
+    keyValueMap[kAttrHTTPClientIP] = client_ip;
 
     auto& request_headers = payload->get_request_headers();
     for (auto itr = request_headers.begin(); itr != request_headers.end(); itr++) {
@@ -82,11 +104,13 @@ OTEL_SDK_STATUS_CODE RequestProcessingEngine::startRequest(
                 std::string(itr->first);
         keyValueMap[key] = itr->second;
     }
+
     auto span = m_sdkWrapper->CreateSpan(spanName, sdkwrapper::SpanKind::SERVER, keyValueMap, payload->get_http_headers());
 
     LOG4CXX_TRACE(mLogger, "Span started for context: [" << wscontext
         <<"] SpanName: " << spanName << ", RequestProtocol: " << payload->get_request_protocol()
         <<" SpanId: " << span.get());
+
     RequestContext* requestContext = new RequestContext(span);
     requestContext->setContextName(wscontext);
 

@@ -6,7 +6,7 @@ services:
     webserver_centos:
         build:
             context: .
-            dockerfile: Dockerfile
+            dockerfile: docker/centos6.9/Dockerfile
         image: apache_centos
         profiles:
             - default
@@ -46,7 +46,7 @@ services:
     nginx_centos:
         build:
             context: .
-            dockerfile: Dockerfile
+            dockerfile: docker/centos6.9/Dockerfile
         image: nginx_centos
         hostname: webserver
         container_name: nginx_centos

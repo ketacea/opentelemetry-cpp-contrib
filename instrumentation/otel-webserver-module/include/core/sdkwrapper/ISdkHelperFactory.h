@@ -17,6 +17,7 @@
 #ifndef __ISDKHELPERFACTORY_H
 #define __ISDKHELPERFACTORY_H
 
+#include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>
 #include <vector>
 #include <unordered_map>
 #include <opentelemetry/nostd/shared_ptr.h>
@@ -37,6 +38,7 @@ public:
 	virtual ~ISdkHelperFactory() = default;
 	virtual OtelTracer GetTracer() = 0;
 	virtual OtelPropagators& GetPropagators() = 0;
+	virtual void Stop() = 0;
 };
 
 } // sdkwrapper

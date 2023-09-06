@@ -82,8 +82,7 @@ WSAgent::init(OTEL_SDK_ENV_RECORD* env, unsigned numberOfRecords)
     return OTEL_SUCCESS;
 }
 
-OTEL_SDK_STATUS_CODE
-WSAgent::term()
+void WSAgent::term()
 {
     if (mAgentCore)
     {

@@ -63,7 +63,6 @@ bool initLogging(const boost::filesystem::path& configFilePath)
 
     DOMConfigurator::configure(configFilePath.native());
 
-
     return true;
 }
 

@@ -17,6 +17,7 @@
 #ifndef __ISCOPEDSPAN_H
 #define __ISCOPEDSPAN_H
 
+#include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>
 #include "sdkwrapper/SdkEnums.h"
 #include <opentelemetry/common/attribute_value.h>
 #include <unordered_map>
