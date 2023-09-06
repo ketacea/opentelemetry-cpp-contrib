@@ -17,6 +17,7 @@
 #ifndef __ISDKWRAPPER_H
 #define __ISDKWRAPPER_H
 
+#include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>
 #include <unordered_map>
 #include <memory>
 #include "sdkwrapper/SdkEnums.h"
@@ -32,6 +33,8 @@ public:
 	virtual ~ISdkWrapper() = default;
 
 	virtual void Init(std::shared_ptr<TenantConfig> config) = 0;
+
+    virtual void Stop() = 0;
 
 	virtual std::shared_ptr<IScopedSpan> CreateSpan(
 		const std::string& name,

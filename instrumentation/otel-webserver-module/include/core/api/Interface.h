@@ -66,6 +66,8 @@ public:
     virtual void initKernel(std::shared_ptr<otel::core::TenantConfig> config,
         std::shared_ptr<otel::core::SpanNamer> spanNamer) = 0;
 
+    virtual void stop() = 0;
+
     virtual IRequestProcessingEngine* getRequestProcessingEngine() = 0;
 };
 
@@ -75,6 +77,8 @@ public:
     virtual ~IContext() = default;
 
     virtual void initContext(std::shared_ptr<otel::core::SpanNamer> spanNamer) = 0;
+
+    virtual void stop() = 0;
 
     virtual IKernel* getKernel() const = 0;
 

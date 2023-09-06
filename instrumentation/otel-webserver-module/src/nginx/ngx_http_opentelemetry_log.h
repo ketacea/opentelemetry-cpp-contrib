@@ -14,6 +14,8 @@
 * limitations under the License.
 */
 
+#ifndef __NGX_HTTP_OPENTELEMETRY_LOG_H
+#define __NGX_HTTP_OPENTELEMETRY_LOG_H
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -24,6 +26,9 @@
 	To log Agent logs into NGINX error logs, 
 	based on the flag "NginxModuleTraceAsError" set by user
 */
-ngx_flag_t logState; // read the value of "NginxModuleTraceAsError" flag
+extern ngx_flag_t logState; // read the value of "NginxModuleTraceAsError" flag
+
 void ngx_writeTrace(ngx_log_t *log, const char* funcName, const char* note, ...);
 void ngx_writeError(ngx_log_t *log, const char* funcName, const char* note, ...); 
+
+#endif

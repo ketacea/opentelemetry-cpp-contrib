@@ -41,6 +41,11 @@ void SdkWrapper::Init(std::shared_ptr<TenantConfig> config)
 		new SdkHelperFactory(config, mLogger));
 }
 
+void SdkWrapper::Stop()
+{
+	mSdkHelperFactory->Stop();
+}
+
 std::shared_ptr<IScopedSpan> SdkWrapper::CreateSpan(
 	const std::string& name,
 	const SpanKind& kind,

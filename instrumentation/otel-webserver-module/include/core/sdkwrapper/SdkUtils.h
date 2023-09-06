@@ -17,6 +17,7 @@
 #ifndef __SDKUTILS_H
 #define __SDKUTILS_H
 
+#include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>
 #include <unordered_map>
 #include <opentelemetry/context/propagation/text_map_propagator.h>
 #include <opentelemetry/nostd/string_view.h>

@@ -27,6 +27,7 @@ ngx_module_libs=" \
   -lopentelemetry_resources \
   -lopentelemetry_trace \
   -lopentelemetry_exporter_otlp_grpc \
+  -lopentelemetry_exporter_otlp_grpc_client \
   -lopentelemetry_otlp_recordable \
 "
 

@@ -14,9 +14,13 @@
 * limitations under the License.
 */
 
+#ifndef __NGX_HTTP_OPENTELEMETRY_MODULE_H
+#define __NGX_HTTP_OPENTELEMETRY_MODULE_H
+
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
+#include <string>
 #include <stdbool.h>
 #include "../../include/core/api/OpentelemetrySdk.h"
 #include "../../include/core/api/opentelemetry_ngx_api.h"
@@ -62,7 +66,7 @@ mod_handler h[NGX_HTTP_MAX_HANDLE_COUNT];
  Structure for storing module details for mapping module handlers with their respective module
 */
 typedef struct {
-        char* name;
+        std::string  name;
         ngx_uint_t ngx_index;
         ngx_http_phases ph[2];
         mod_handler handler;
@@ -187,3 +191,4 @@ static char* computeContextName(ngx_http_request_t *r, ngx_http_opentelemetry_lo
 // static ngx_int_t ngx_http_opentelemetry_header_filter(ngx_http_request_t *r);
 // static ngx_int_t ngx_http_opentelemetry_body_filter(ngx_http_request_t *r, ngx_chain_t *in);
 
+#endif

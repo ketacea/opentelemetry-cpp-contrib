@@ -10,8 +10,8 @@ ENV JDK_ARCH x64
 ARG PYTHON_VERSION="2.7.8"
 ARG CMAKE_VERSION="3.20"
 ARG CMAKE_0VERSION="3.20.0"
-ARG GRPC_VERSION="1.36.4"
-ARG OPENTELEMETRY_VERSION="1.2.0"
+ARG GRPC_VERSION="1.49.2"
+ARG OPENTELEMETRY_VERSION="1.8.1"
 ARG BOOST_VERSION="1.75.0"
 ARG BOOST_FILENAME="boost_1_75_0"
 ARG APR_VERSION="1.7.0"
@@ -26,7 +26,7 @@ ARG AUTOMAKE_VERSION="1.16.3"
 ARG PERL_VERSION="5.20.2"
 ARG PERL_CPANVERSION="5.0"
 ARG PCRE_VERSION="8.44"
-ARG NGINX_VERSION="1.22.0"
+ARG NGINX_VERSION="1.21.4"
 
 # create default non-root user
 RUN groupadd -r swuser && useradd -u 1000 -g swuser -m -s /sbin/nologin -c "default non-root user" swuser
@@ -163,7 +163,7 @@ RUN yum install perl-Thread-Queue.noarch -y \
     && ./Configure -des -Dprefix=$HOME/localperl \
     && make \
     && make test; echo 0 \
-    && make install 
+    && make install
 ENV PATH=$HOME/localperl/bin:$PATH
 
 # install autoconf
@@ -269,36 +269,4 @@ COPY . /otel-webserver-module
 RUN cp -r /dependencies /otel-webserver-module/ \
     && cp -r /build-dependencies /otel-webserver-module/ \
     && cd otel-webserver-module \
-    && ./gradlew assembleWebServerModule 
-
-RUN echo '[nginx]' >> /etc/yum.repos.d/nginx.repo \
-    && echo 'name=nginx repo' >> /etc/yum.repos.d/nginx.repo \
-    && echo 'baseurl=https://nginx.org/packages/centos/7/x86_64' >> /etc/yum.repos.d/nginx.repo \
-    && echo 'gpgcheck=0' >> /etc/yum.repos.d/nginx.repo \ 
-    && echo 'enabled=1' >> /etc/yum.repos.d/nginx.repo \
-    && yum install nginx-${NGINX_VERSION} -y
-
-RUN cd /otel-webserver-module/build \
-    && tar -xf opentelemetry-webserver-sdk-x64-linux.tgz \
-    && mv -f opentelemetry-webserver-sdk /opt/ \
-    && cd ../ \
-    && cp opentelemetry_module.conf /etc/httpd/conf/ \
-    && sed -i "s/libmod_apache_otel22.so/libmod_apache_otel.so/g" /etc/httpd/conf/opentelemetry_module.conf \
-    && echo 'Include conf/opentelemetry_module.conf' >> /etc/httpd/conf/httpd.conf \
-    && cd /opt/opentelemetry-webserver-sdk \
-    && ./install.sh \
-    && cd /
-
-RUN cp /otel-webserver-module/conf/nginx/opentelemetry_module.conf /opt/ \
-    && sed -i '8i load_module /opt/opentelemetry-webserver-sdk/WebServerModule/Nginx/1.22.0/ngx_http_opentelemetry_module.so;' /etc/nginx/nginx.conf \
-    && sed -i '33i include /opt/opentelemetry_module.conf;' /etc/nginx/nginx.conf \ 
-    && cd /
-
-# Remove unwanted files
-RUN rm -rf grpc && rm -rf autoconf-${AUTOCONF_VERSION} && rm -rf automake-${AUTOMAKE_VERSION} && rm -rf cmake-${CMAKE_VERSION}-linux-x86_64 \
-    && rm -rf libtool-${LIBTOOL_VERSION} && rm -rf Python-${PYTHON_VERSION} \
-    && rm -f apr-${APR_VERSION}.tar.gz && rm -f apr-util-${APRUTIL_VERSION}.tar.gz \
-    && rm -f httpd-2.2.31.tar.gz && rm -f httpd-2.4.23.tar.gz
-
-COPY entrypoint.sh /usr/local/bin/
-ENTRYPOINT ["entrypoint.sh"]
+    && ./gradlew assembleWebServerModule

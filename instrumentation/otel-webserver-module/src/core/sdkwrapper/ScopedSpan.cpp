@@ -14,7 +14,9 @@
 * limitations under the License.
 */
 
+#include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>
 #include "sdkwrapper/ScopedSpan.h"
+#include "opentelemetry/trace/context.h"
 
 namespace otel {
 namespace core {
@@ -28,8 +30,10 @@ ScopedSpan::ScopedSpan(
 	const AgentLogger& logger) :
 	mLogger(logger)
 {
+    context::Context ctx = context::RuntimeContext::GetCurrent();
 	trace::StartSpanOptions options{};
 	options.kind = kind;
+	options.parent = ctx;
 	mSpan = sdkHelperFactory->GetTracer()->StartSpan(name, attributes, options);
 	mScope.reset(new trace::Scope(mSpan));
 	mSpanKind = kind;

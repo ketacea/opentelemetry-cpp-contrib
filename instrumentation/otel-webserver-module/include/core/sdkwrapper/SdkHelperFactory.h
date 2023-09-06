@@ -17,6 +17,7 @@
 #ifndef __SDKHELPERFACTORY_H
 #define __SDKHELPERFACTORY_H
 
+#include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>
 #include <memory>
 #include <vector>
 #include <unordered_map>
@@ -29,7 +30,7 @@
 #include <opentelemetry/sdk/resource/resource.h>
 #include "sdkwrapper/ISdkHelperFactory.h"
 #include <opentelemetry/sdk/trace/sampler.h>
-#include "opentelemetry/trace/tracer_provider.h"
+#include "opentelemetry/sdk/trace/tracer_provider.h"
 #include "sdkwrapper/ISdkWrapper.h"
 #include "AgentLogger.h"
 
@@ -41,13 +42,15 @@ using namespace opentelemetry;
 using OtelSpanExporter = std::unique_ptr<opentelemetry::sdk::trace::SpanExporter>;
 using OtelSpanProcessor = std::unique_ptr<opentelemetry::sdk::trace::SpanProcessor>;
 using OtelSampler = std::unique_ptr<opentelemetry::sdk::trace::Sampler>;
-using OtelTracerProvider = opentelemetry::nostd::shared_ptr<opentelemetry::trace::TracerProvider>;
+using OtelTracerProvider = opentelemetry::nostd::shared_ptr<opentelemetry::sdk::trace::TracerProvider>;
 
 class SdkHelperFactory: public ISdkHelperFactory {
 public:
 	SdkHelperFactory(
 		std::shared_ptr<TenantConfig> config,
 		const AgentLogger& logger);
+
+	void Stop() override;
 
 	OtelTracer GetTracer() override;
 

@@ -154,8 +154,13 @@ chmod 0777 "$agentLogDir"
 # write log4cxx file
 escapeForSedReplacement agentLogDir "${agentLogDir}"
 log4cxxTemplate="${log4cxxFile}.template"
-log4cxxTemplateOwner=$(stat "--format=%u" "${log4cxxTemplate}")
-log4cxxTemplateGroup=$(stat "--format=%g" "${log4cxxTemplate}")
+if grep -q "Alpine" /etc/os-release; then
+  log4cxxTemplateOwner=$(stat -c %u "${log4cxxTemplate}")
+  log4cxxTemplateGroup=$(stat -c %g "${log4cxxTemplate}")
+else
+  log4cxxTemplateOwner=$(stat "--format=%u" "${log4cxxTemplate}")
+  log4cxxTemplateGroup=$(stat "--format=%g" "${log4cxxTemplate}")
+fi
 log "Writing '${log4cxxFile}'"
 cat "${log4cxxTemplate}" | \
     sed -e "s/__agent_log_dir__/${agentLogDir}/g"    \

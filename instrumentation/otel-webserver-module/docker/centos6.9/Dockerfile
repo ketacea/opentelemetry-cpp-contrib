@@ -10,8 +10,8 @@ ENV JDK_ARCH x64
 ARG PYTHON_VERSION="2.7.8"
 ARG CMAKE_VERSION="3.20"
 ARG CMAKE_0VERSION="3.20.0"
-ARG GRPC_VERSION="1.36.4"
-ARG OPENTELEMETRY_VERSION="1.2.0"
+ARG GRPC_VERSION="1.49.2"
+ARG OPENTELEMETRY_VERSION="1.8.1"
 ARG BOOST_VERSION="1.75.0"
 ARG BOOST_FILENAME="boost_1_75_0"
 ARG APR_VERSION="1.7.0"
@@ -24,8 +24,7 @@ ARG LOG4CXX_VERSION="0.11.0"
 ARG GTEST_VERSION="1.10.0"
 ARG AUTOMAKE_VERSION="1.16.3"
 ARG PCRE_VERSION="8.44"
-ARG NGINX_VERSION="1.18.0"
-
+ARG NGINX_VERSION="1.21.4"
 
 # create default non-root user
 RUN groupadd -r swuser && useradd -u 1000 -g swuser -m -s /sbin/nologin -c "default non-root user" swuser
@@ -46,9 +45,10 @@ RUN yum update -y \
     yum install httpd -y \
     && yum clean all
 
+COPY epel-release-latest-7.noarch.rpm /
+
 # install lcov package
-RUN wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm \
-    && yum install ./epel-release-latest-*.noarch.rpm -y \
+RUN yum install /epel-release-latest-*.noarch.rpm -y \
     && yum install lcov -y \
     && yum clean all
 
@@ -64,7 +64,7 @@ RUN curl https://www.getpagespeed.com/files/centos6-eol.repo --output /etc/yum.r
   && yum clean all
 ENV PATH="/opt/rh/devtoolset-7/root/usr/bin:${PATH}"
 
-# install python 
+# install python
 RUN wget http://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz \
     && unxz Python-${PYTHON_VERSION}.tar.xz \
     && tar -xf Python-${PYTHON_VERSION}.tar \
@@ -84,7 +84,7 @@ RUN curl -o /usr/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/
 RUN yum install git -y \
   && yum clean all
 
-# install cmake 
+# install cmake
 RUN wget https://cmake.org/files/v${CMAKE_VERSION}/cmake-${CMAKE_0VERSION}-linux-x86_64.tar.gz \
   && tar -xvf cmake-${CMAKE_0VERSION}-linux-x86_64.tar.gz \
   && cd cmake-${CMAKE_0VERSION}-linux-x86_64 \
@@ -107,7 +107,7 @@ RUN git clone https://github.com/grpc/grpc \
 # Create dependencies folder to store all dependencies.
 RUN mkdir -p dependencies
 
-# install boost version 
+# install boost version
 RUN wget https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/${BOOST_FILENAME}_rc1.tar.gz \
     && tar -xvf ${BOOST_FILENAME}_rc1.tar.gz \
     && cd ${BOOST_FILENAME} \
@@ -188,6 +188,8 @@ RUN mkdir -p dependencies/apache-log4cxx/${LOG4CXX_VERSION} \
     && cd .. && rm -rf apache-log4cxx-${LOG4CXX_VERSION}.tar.gz && rm -rf apache-log4cxx-${LOG4CXX_VERSION}
 
 # install opentelemetry
+
+# install opentelemetry
 RUN mkdir -p dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/lib \
     && mkdir -p dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/include \
     && git clone https://github.com/open-telemetry/opentelemetry-cpp \
@@ -196,7 +198,17 @@ RUN mkdir -p dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/lib \
     && git submodule update --init --recursive \
     && mkdir build \
     && cd build \
-    && cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DWITH_OTLP=ON -DCMAKE_INSTALL_PREFIX=/dependencies/opentelemetry/${OPENTELEMETRY_VERSION} \
+    && cmake .. \
+          -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+          -DBUILD_TESTING=OFF \
+          -DWITH_EXAMPLES=OFF \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_SHARED_LIBS=ON \
+          -DWITH_OTLP=ON \
+          -DWITH_OTLP_GRPC=ON \
+          -DWITH_OTLP_HTTP=OFF \
+          -DCMAKE_CXX_STANDARD=17 \
+          -DCMAKE_INSTALL_PREFIX=/dependencies/opentelemetry/${OPENTELEMETRY_VERSION} \
     && cmake --build . --target all \
     && cd .. \
     && find . -name "*.so" -type f -exec cp {} /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/lib/ \; \
@@ -253,35 +265,4 @@ COPY . /otel-webserver-module
 RUN cp -r /dependencies /otel-webserver-module/ \
     && cp -r /build-dependencies /otel-webserver-module/ \
     && cd otel-webserver-module \
-    && ./gradlew assembleWebServerModule 
-
-RUN echo '[nginx]' >> /etc/yum.repos.d/nginx.repo \
-    && echo 'name=nginx repo' >> /etc/yum.repos.d/nginx.repo \
-    && echo 'baseurl=https://nginx.org/packages/centos/6/x86_64' >> /etc/yum.repos.d/nginx.repo \
-    && echo 'gpgcheck=0' >> /etc/yum.repos.d/nginx.repo \ 
-    && echo 'enabled=1' >> /etc/yum.repos.d/nginx.repo \
-    && yum install nginx -y 
-
-RUN cd /otel-webserver-module/build \
-    && tar -xf opentelemetry-webserver-sdk-x64-linux.tgz \
-    && mv -f opentelemetry-webserver-sdk /opt/ \
-    && cd ../ \
-    && cp opentelemetry_module.conf /etc/httpd/conf/ \
-    && echo 'Include conf/opentelemetry_module.conf' >> /etc/httpd/conf/httpd.conf \
-    && cd /opt/opentelemetry-webserver-sdk \
-    && ./install.sh \
-    && cd /
-
-RUN cp /otel-webserver-module/conf/nginx/opentelemetry_module.conf /opt/ \
-    && sed -i '8i load_module /opt/opentelemetry-webserver-sdk/WebServerModule/Nginx/ngx_http_opentelemetry_module.so;' /etc/nginx/nginx.conf \
-    && sed -i '33i include /opt/opentelemetry_module.conf;' /etc/nginx/nginx.conf \ 
-    && cd /
-
-# Remove unwanted files
-RUN rm -rf grpc && rm -rf autoconf-${AUTOCONF_VERSION} && rm -rf automake-${AUTOMAKE_VERSION} && rm -rf cmake-${CMAKE_VERSION}-linux-x86_64 \
-    && rm -rf libtool-${LIBTOOL_VERSION} && rm -rf Python-${PYTHON_VERSION} \
-    && rm -f apr-${APR_VERSION}.tar.gz && rm -f apr-util-${APRUTIL_VERSION}.tar.gz \
-    && rm -f httpd-2.2.31.tar.gz && rm -f httpd-2.4.23.tar.gz
-
-COPY entrypoint.sh /usr/local/bin/
-ENTRYPOINT ["entrypoint.sh"]
+    && ./gradlew assembleWebServerModule

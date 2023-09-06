@@ -83,12 +83,12 @@ SdkHelperFactory::SdkHelperFactory(
     auto processor = GetSpanProcessor(config, std::move(exporter));
     auto sampler = GetSampler(config);
 
-    mTracerProvider = opentelemetry::nostd::shared_ptr<opentelemetry::trace::TracerProvider>(
-      new opentelemetry::sdk::trace::TracerProvider(
-            std::move(processor),
-            opentelemetry::sdk::resource::Resource::Create(attributes),
-            std::move(sampler)
-            ));
+    mTracerProvider = opentelemetry::nostd::shared_ptr<opentelemetry::sdk::trace::TracerProvider>(
+        new opentelemetry::sdk::trace::TracerProvider(
+           std::move(processor),
+           opentelemetry::sdk::resource::Resource::Create(attributes),
+           std::move(sampler)
+        ));
 
     mTracer = mTracerProvider->GetTracer("cpp", cppSDKVersion);
     LOG4CXX_INFO(mLogger,
@@ -99,6 +99,13 @@ SdkHelperFactory::SdkHelperFactory(
     using MapHttpTraceCtx = opentelemetry::trace::propagation::HttpTraceContext;
     mPropagators.push_back(
         std::unique_ptr<MapHttpTraceCtx>(new MapHttpTraceCtx()));
+}
+
+void SdkHelperFactory::Stop()
+{
+    if (mTracerProvider) {
+        mTracerProvider->Shutdown();
+    }
 }
 
 OtelTracer SdkHelperFactory::GetTracer()

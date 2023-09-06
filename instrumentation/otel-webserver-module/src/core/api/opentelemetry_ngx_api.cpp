@@ -98,6 +98,11 @@ OTEL_SDK_STATUS_CODE opentelemetry_core_init(OTEL_SDK_ENV_RECORD* env, unsigned 
     return res;
 }
 
+void opentelemetry_core_term()
+{
+    wsAgent.term();
+}
+
 OTEL_SDK_STATUS_CODE startRequest(const char* wscontext, request_payload* req_payload, OTEL_SDK_HANDLE_REQ* reqHandle)
 {
     OTEL_SDK_STATUS_CODE res = OTEL_SUCCESS;

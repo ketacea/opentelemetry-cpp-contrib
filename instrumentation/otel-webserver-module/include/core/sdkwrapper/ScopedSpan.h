@@ -17,6 +17,7 @@
 #ifndef __SCOPEDSPAN_H
 #define __SCOPEDSPAN_H
 
+#include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>
 #include "sdkwrapper/IScopedSpan.h"
 #include "sdkwrapper/ISdkHelperFactory.h"
 #include <opentelemetry/trace/tracer.h>

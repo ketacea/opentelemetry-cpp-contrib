@@ -17,6 +17,7 @@
 #ifndef __SDKWRAPPER_H
 #define __SDKWRAPPER_H
 
+#include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>
 #include "sdkwrapper/ISdkWrapper.h"
 #include "sdkwrapper/ISdkHelperFactory.h"
 #include "AgentLogger.h"
@@ -31,6 +32,8 @@ public:
 	SdkWrapper();
 
 	void Init(std::shared_ptr<TenantConfig> config) override;
+
+	void Stop() override;
 
 	std::shared_ptr<IScopedSpan> CreateSpan(
 		const std::string& name,
