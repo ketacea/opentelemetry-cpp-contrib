@@ -17,9 +17,12 @@
 #ifndef __NGX_HTTP_OPENTELEMETRY_MODULE_H
 #define __NGX_HTTP_OPENTELEMETRY_MODULE_H
 
+extern "C" {
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
+}
+
 #include <string>
 #include <stdbool.h>
 #include "../../include/core/api/OpentelemetrySdk.h"
@@ -158,6 +161,7 @@ static ngx_uint_t otel_getErrorCode(ngx_http_request_t* r);
 static char* ngx_otel_context_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 static void ngx_otel_set_global_context(ngx_http_opentelemetry_loc_conf_t * prev);
 static void removeUnwantedHeader(ngx_http_request_t* r);
+static void addScriptAttributes(request_payload* req_payload, ngx_http_request_t* r);
 /*
     Module specific handler
 */

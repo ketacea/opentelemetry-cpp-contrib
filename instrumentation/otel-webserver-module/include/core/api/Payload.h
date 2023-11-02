@@ -39,6 +39,7 @@ class RequestPayload
 
 	std::unordered_map<std::string, std::string> http_headers; /* HTTP Request headers: Cookie, Referer, SM_USER*/
 	std::unordered_map<std::string, std::string> request_headers;
+	std::unordered_map<std::string, std::string> attributes;
 
 	std::string server_name;
     std::string scheme;
@@ -56,6 +57,10 @@ public:
     void set_request_headers(const std::string& key, const std::string& value)
     {
     	request_headers[key] = value;
+    }
+    void set_attributes(const std::string& key, const std::string& value)
+    {
+        attributes[key] = value;
     }
     void set_uri(const char* URI) { uri = URI; }
     void set_request_protocol(const char* requestProtocol) {request_protocol = requestProtocol; }
@@ -87,6 +92,9 @@ public:
     std::unordered_map<std::string, std::string>& get_request_headers() {
     	return request_headers;
     }
+    std::unordered_map<std::string, std::string>& get_attributes() {
+        	return attributes;
+        }
 };
 
 struct ResponsePayload
