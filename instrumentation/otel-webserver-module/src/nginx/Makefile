@@ -1200,10 +1200,12 @@ objs/src/http/modules/ngx_http_upstream_zone_module.o:	$(CORE_DEPS) $(HTTP_DEPS)
 modules:	objs/ngx_http_opentelemetry_module.so
 
 objs/ngx_http_opentelemetry_module.so:	objs/addon/nginx/ngx_http_opentelemetry_log.o \
+	objs/addon/nginx/script.o \
 	objs/addon/nginx/ngx_http_opentelemetry_module.o \
 	objs/ngx_http_opentelemetry_module_modules.o
 
 	$(LINK) -o objs/ngx_http_opentelemetry_module.so \
+	objs/addon/nginx/script.o \
 	objs/addon/nginx/ngx_http_opentelemetry_log.o \
 	objs/addon/nginx/ngx_http_opentelemetry_module.o \
 	objs/ngx_http_opentelemetry_module_modules.o \
@@ -1219,11 +1221,17 @@ objs/ngx_http_opentelemetry_module_modules.o:	$(CORE_DEPS) \
 		objs/ngx_http_opentelemetry_module_modules.c
 
 
+objs/addon/nginx/script.o:	$(ADDON_DEPS) \
+	script.cpp
+	$(CC) -c -fPIC $(CFLAGS) $(ALL_INCS) \
+		-o objs/addon/nginx/script.o \
+		../../src/nginx/script.cpp
+
 objs/addon/nginx/ngx_http_opentelemetry_log.o:	$(ADDON_DEPS) \
-	../../src/nginx/ngx_http_opentelemetry_log.c
+	ngx_http_opentelemetry_log.cpp
 	$(CC) -c -fPIC $(CFLAGS) $(ALL_INCS) \
 		-o objs/addon/nginx/ngx_http_opentelemetry_log.o \
-		../../src/nginx/ngx_http_opentelemetry_log.c
+		../../src/nginx/ngx_http_opentelemetry_log.cpp
 
 
 objs/addon/nginx/ngx_http_opentelemetry_module.o:	$(ADDON_DEPS) \

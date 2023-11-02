@@ -18,12 +18,12 @@ extern "C" {
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
-
-extern ngx_module_t otel_ngx_module;
 }
 
 #include "ngx_http_opentelemetry_module.h"
 #include "ngx_http_opentelemetry_log.h"
+#include "script.h"
+#include "nginx_utils.h"
 #include <sys/types.h>
 #include <unistd.h>
 #include <exception>
@@ -35,6 +35,17 @@ static ngx_str_t hostname;
 static char* sName;
 static char* sNamespace;
 static char* sInstanceId;
+
+const ScriptAttributeDeclaration kDefaultScriptAttributes[] = {
+  {"http.scheme", "$scheme"},
+  {"net.host.port", "$server_port"},
+  {"net.peer.ip", "$remote_addr"},
+  {"net.peer.port", "$remote_port"},
+};
+
+struct OtelMainConf {
+  ngx_array_t* scriptAttributes;
+};
 
 /*
 List of modules being monitored
@@ -543,6 +554,36 @@ static ngx_int_t ngx_http_opentelemetry_init(ngx_conf_t *cf)
 
         res = -1;
 
+        OtelMainConf* otelMainConf =
+            (OtelMainConf*)ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
+
+          if (!otelMainConf) {
+            return NGX_ERROR;
+          }
+
+          otelMainConf->scriptAttributes = ngx_array_create(
+            cf->pool, sizeof(kDefaultScriptAttributes) / sizeof(kDefaultScriptAttributes[0]),
+            sizeof(CompiledScriptAttribute));
+
+          if (otelMainConf->scriptAttributes == nullptr) {
+            return NGX_ERROR;
+          }
+
+          for (const auto& attrib : kDefaultScriptAttributes) {
+            CompiledScriptAttribute* compiledAttrib =
+              (CompiledScriptAttribute*)ngx_array_push(otelMainConf->scriptAttributes);
+
+            if (compiledAttrib == nullptr) {
+              return false;
+            }
+
+            new (compiledAttrib) CompiledScriptAttribute();
+
+            if (!CompileScriptAttribute(cf, attrib, compiledAttrib)) {
+              return NGX_ERROR;
+            }
+          }
+
         cmcf = (ngx_http_core_main_conf_t*)ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
         ngx_writeError(cf->cycle->log, __func__, "Registering handlers for modules in different phases");
@@ -711,7 +752,7 @@ static char* ngx_otel_context_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf
             c_count++;
         }
     } catch(const std::exception& e) {
-        ngx_log_error(NGX_LOG_ERR, cycle->log, 0, "ngx_otel_context_set catch exception: %s", e.what());
+        ngx_log_error(NGX_LOG_ERR, cf->cycle->log, 0, "ngx_otel_context_set catch exception: %s", e.what());
     }
     return NGX_CONF_OK;
 }
@@ -1723,8 +1764,11 @@ static void fillRequestPayload(request_payload* req_payload, ngx_http_request_t*
         }
         request_headers_idx++;
     }
+
     req_payload->propagation_count = propagation_headers_idx;
     req_payload->request_headers_count = request_headers_idx;
+
+    addScriptAttributes(req_payload, r);
 }
 
 static void fillResponsePayload(response_payload* res_payload, ngx_http_request_t* r)
@@ -1760,4 +1804,35 @@ static void fillResponsePayload(response_payload* res_payload, ngx_http_request_
         }
     }
     res_payload->response_headers_count = headers_count;
+}
+
+void addScriptAttributes(request_payload* req_payload, ngx_http_request_t* r) {
+  OtelMainConf* otelMainConf = (OtelMainConf*)ngx_http_get_module_main_conf(r, ngx_http_core_module);
+  const ngx_array_t* attributes = otelMainConf -> scriptAttributes;
+  if (!attributes) {
+    return;
+  }
+
+  req_payload->attributes = (http_headers*)ngx_pcalloc(r->pool, attributes->nelts * sizeof(http_headers));
+  CompiledScriptAttribute* elements = (CompiledScriptAttribute*)attributes->elts;
+  int attributes_idx = 0;
+  for (ngx_uint_t i = 0; i < attributes->nelts; i++) {
+    CompiledScriptAttribute* attribute = &elements[i];
+    ngx_str_t key = ngx_null_string;
+    ngx_str_t value = ngx_null_string;
+    if (attribute->key.Run(r, &key) && attribute->value.Run(r, &value)) {
+        char *temp_key = (char *)ngx_pcalloc(r->pool, (strlen((char *)key.data))+1);
+        strcpy(temp_key,(const char*)key.data);
+        temp_key[key.len]='\0';
+
+        char *temp_value = (char *)ngx_pcalloc(r->pool, (strlen((char *)value.data))+1);
+        strcpy(temp_value,(const char*)value.data);
+        temp_value[value.len]='\0';
+
+        req_payload->attributes[attributes_idx].name = temp_key;
+        req_payload->attributes[attributes_idx].value = temp_value;
+        attributes_idx++;
+    }
+  }
+  req_payload->attributes_count = attributes_idx;
 }

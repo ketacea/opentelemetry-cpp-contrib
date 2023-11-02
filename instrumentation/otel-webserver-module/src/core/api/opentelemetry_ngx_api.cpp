@@ -46,6 +46,10 @@ void populatePayload(request_payload* req_payload, void* load)
         payload->set_http_headers(req_payload->propagation_headers[i].name, req_payload->propagation_headers[i].value);
     }
 
+    for(int i=0; i<req_payload->attributes_count; i++){
+        payload->set_attributes(req_payload->attributes[i].name, req_payload->attributes[i].value);
+    }
+
     for (int i = 0; i < req_payload->request_headers_count; i++) {
         std::string key(req_payload->request_headers[i].name);
         if (requestHeadersToCapture.find(key)

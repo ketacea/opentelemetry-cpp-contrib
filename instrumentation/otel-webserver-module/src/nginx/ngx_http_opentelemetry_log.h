@@ -17,8 +17,11 @@
 #ifndef __NGX_HTTP_OPENTELEMETRY_LOG_H
 #define __NGX_HTTP_OPENTELEMETRY_LOG_H
 
+extern "C" {
 #include <ngx_config.h>
 #include <ngx_core.h>
+}
+
 #include <stdbool.h>
 #include <stdarg.h>
 

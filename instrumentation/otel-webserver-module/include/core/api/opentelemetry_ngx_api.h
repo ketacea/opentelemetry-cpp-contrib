@@ -47,9 +47,11 @@ typedef struct {
     const char* client_ip;
     http_headers* propagation_headers;
     http_headers* request_headers;
+    http_headers* attributes;
 
     int propagation_count;
     int request_headers_count;
+    int attributes_count;
 }request_payload;
 
 typedef struct {

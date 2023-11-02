@@ -72,40 +72,45 @@ OTEL_SDK_STATUS_CODE RequestProcessingEngine::startRequest(
     std::string spanName = m_spanNamer->getSpanName(uri);
     otel::core::sdkwrapper::OtelKeyValueMap keyValueMap;
 
+    auto span = m_sdkWrapper->CreateSpan(spanName, sdkwrapper::SpanKind::SERVER, keyValueMap, payload->get_http_headers());
+
     std::string protocol(payload->get_request_protocol());
-    keyValueMap[kAttrRequestProtocol] = protocol;
+    span->AddAttribute(kAttrRequestProtocol, protocol);
 
     std::string server_name(payload->get_server_name());
-    keyValueMap[kAttrHTTPServerName] = server_name;
+    span->AddAttribute(kAttrHTTPServerName, server_name);
 
     std::string method(payload->get_http_request_method());
-    keyValueMap[kAttrHTTPMethod] = method;
+    span->AddAttribute(kAttrHTTPMethod, method);
 
     std::string scheme(payload->get_scheme());
-    keyValueMap[kAttrHTTPScheme] = scheme;
+    span->AddAttribute(kAttrHTTPScheme, scheme);
 
     std::string host(payload->get_host());
-    keyValueMap[kAttrNetHostName] = host;
-
-    keyValueMap[kAttrNETHostPort] = payload->get_port();
+    span->AddAttribute(kAttrNetHostName, host);
 
     std::string target(payload->get_target());
-    keyValueMap[kAttrHTTPTarget] = target;
+    span->AddAttribute(kAttrHTTPTarget, target);
 
     std::string flavor(payload->get_flavor());
-    keyValueMap[kAttrHTTPFlavor] = flavor;
+    span->AddAttribute(kAttrHTTPFlavor, flavor);
 
     std::string client_ip(payload->get_client_ip());
-    keyValueMap[kAttrHTTPClientIP] = client_ip;
+    span->AddAttribute(kAttrHTTPClientIP, client_ip);
 
     auto& request_headers = payload->get_request_headers();
     for (auto itr = request_headers.begin(); itr != request_headers.end(); itr++) {
-        std::string key = std::string(http_request_header) +
-                std::string(itr->first);
-        keyValueMap[key] = itr->second;
+        const std::string key = std::string(http_request_header) + std::string(itr->first);
+        const std::string value = std::string(itr->second);
+        span->AddAttribute(key, value);
     }
 
-    auto span = m_sdkWrapper->CreateSpan(spanName, sdkwrapper::SpanKind::SERVER, keyValueMap, payload->get_http_headers());
+    auto& attributes = payload->get_attributes();
+    for (auto itr = attributes.begin(); itr != attributes.end(); itr++) {
+        const std::string key = std::string(itr->first);
+        const std::string value = std::string(itr->second);
+        span->AddAttribute(key, value);
+    }
 
     LOG4CXX_TRACE(mLogger, "Span started for context: [" << wscontext
         <<"] SpanName: " << spanName << ", RequestProtocol: " << payload->get_request_protocol()
