@@ -1330,25 +1330,25 @@ static void startMonitoringRequest(ngx_http_request_t* r){
 }
 
 static ngx_int_t ngx_http_otel_rewrite_handler(ngx_http_request_t *r){
-    otel_startInteraction(r, "ngx_http_rewrite_module");
+    //otel_startInteraction(r, "ngx_http_rewrite_module");
     ngx_int_t rvalue = h[NGX_HTTP_REWRITE_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_rewrite_module", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_rewrite_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
 
 static ngx_int_t ngx_http_otel_limit_conn_handler(ngx_http_request_t *r){
-    otel_startInteraction(r, "ngx_http_limit_conn_module");
+    //otel_startInteraction(r, "ngx_http_limit_conn_module");
     ngx_int_t rvalue = h[NGX_HTTP_LIMIT_CONN_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_limit_conn_module", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_limit_conn_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
 
 static ngx_int_t ngx_http_otel_limit_req_handler(ngx_http_request_t *r){
-    otel_startInteraction(r, "ngx_http_limit_req_module");
+    //otel_startInteraction(r, "ngx_http_limit_req_module");
     ngx_int_t rvalue = h[NGX_HTTP_LIMIT_REQ_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_limit_req_module", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_limit_req_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
@@ -1370,57 +1370,57 @@ static ngx_int_t ngx_http_otel_realip_handler(ngx_http_request_t *r){
 }
 
 static ngx_int_t ngx_http_otel_auth_request_handler(ngx_http_request_t *r){
-    otel_startInteraction(r, "ngx_http_auth_request_module");
+    //otel_startInteraction(r, "ngx_http_auth_request_module");
     ngx_int_t rvalue = h[NGX_HTTP_LIMIT_AUTH_REQ_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_auth_request_module", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_auth_request_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
 
 static ngx_int_t ngx_http_otel_auth_basic_handler(ngx_http_request_t *r){
-    otel_startInteraction(r, "ngx_http_auth_basic_module");
+    //otel_startInteraction(r, "ngx_http_auth_basic_module");
     ngx_int_t rvalue = h[NGX_HTTP_AUTH_BASIC_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_auth_basic_module", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_auth_basic_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
 
 static ngx_int_t ngx_http_otel_access_handler(ngx_http_request_t *r){
-    otel_startInteraction(r, "ngx_http_access_module");
+    //otel_startInteraction(r, "ngx_http_access_module");
     ngx_int_t rvalue = h[NGX_HTTP_ACCESS_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_access_module", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_access_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
 
 static ngx_int_t ngx_http_otel_static_handler(ngx_http_request_t *r){
-    otel_startInteraction(r, "ngx_http_static_module");
+    //otel_startInteraction(r, "ngx_http_static_module");
     ngx_int_t rvalue = h[NGX_HTTP_STATIC_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_static_module", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_static_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
 
 static ngx_int_t ngx_http_otel_gzip_static_handler(ngx_http_request_t *r){
-    otel_startInteraction(r, "ngx_http_gzip_static_module");
+    //otel_startInteraction(r, "ngx_http_gzip_static_module");
     ngx_int_t rvalue = h[NGX_HTTP_GZIP_STATIC_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_gzip_static_module", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_gzip_static_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
 
 static ngx_int_t ngx_http_otel_dav_handler(ngx_http_request_t *r){
-    otel_startInteraction(r, "ngx_http_dav_module");
+    //otel_startInteraction(r, "ngx_http_dav_module");
     ngx_int_t rvalue = h[NGX_HTTP_DAV_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_dav_module", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_dav_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
 
 static ngx_int_t ngx_http_otel_autoindex_handler(ngx_http_request_t *r){
-    otel_startInteraction(r, "ngx_http_autoindex_module");
+    //otel_startInteraction(r, "ngx_http_autoindex_module");
     ngx_int_t rvalue = h[NGX_HTTP_AUTO_INDEX_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_autoindex_module", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_autoindex_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
@@ -1517,9 +1517,9 @@ static ngx_int_t ngx_http_otel_try_files_handler(ngx_http_request_t *r) {
 }
 
 static ngx_int_t ngx_http_otel_mirror_handler(ngx_http_request_t *r) {
-    otel_startInteraction(r, "ngx_http_otel_mirror_handler");
+    //otel_startInteraction(r, "ngx_http_otel_mirror_handler");
     ngx_int_t rvalue = h[NGX_HTTP_MIRROR_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_otel_mirror_handler", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_otel_mirror_handler", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
