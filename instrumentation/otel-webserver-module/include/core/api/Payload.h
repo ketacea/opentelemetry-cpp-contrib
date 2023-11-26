@@ -75,7 +75,6 @@ public:
     void set_client_ip(const char* clientIp) {client_ip = clientIp; }
     void set_port(long aPort) {port = aPort; }
 
-
 	std::string get_uri() {	return uri; }
 	std::string get_request_protocol() { return request_protocol; }
 	std::string get_http_get_parameter() { return http_get_parameter; }
@@ -108,6 +107,7 @@ struct InteractionPayload
 	// Endpoint
 	std::string moduleName;
 	std::string phaseName;
+	std::string uri;
 	bool resolveBackends;
 
 	InteractionPayload() {}
@@ -131,6 +131,30 @@ struct EndInteractionPayload
 	backendType(bType),
 	errorCode(eCode),
 	errorMsg(eMsg)
+	{}
+};
+
+struct ClientInteractionPayload
+{
+	std::string uri;
+
+	ClientInteractionPayload() {}
+
+	ClientInteractionPayload(std::string module, std::string phase, bool b) : moduleName(module), phaseName(phase), resolveBackends(b)
+	{}
+};
+
+struct EndClientInteractionPayload
+{
+	std::string peerName;
+
+	long errorCode;
+
+	EndClientInteractionPayload() {}
+
+	EndClientInteractionPayload(std::string peerName, long eCode) :
+	peerName(peerName),
+	errorCode(eCode)
 	{}
 };
 

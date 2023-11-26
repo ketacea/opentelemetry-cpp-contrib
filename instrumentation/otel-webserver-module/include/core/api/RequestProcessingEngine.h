@@ -32,6 +32,8 @@ class RequestPayload;
 class ResponsePayload;
 class InteractionPayload;
 class EndInteractionPayload;
+class ClientInteractionPayload;
+class EndClientInteractionPayload;
 
 namespace sdkwrapper {
 
@@ -62,6 +64,14 @@ public:
         OTEL_SDK_HANDLE_REQ reqHandle,
         bool ignoreBackend,
         EndInteractionPayload *payload) = 0;
+    virtual OTEL_SDK_STATUS_CODE startClientInteraction(
+        OTEL_SDK_HANDLE_REQ reqHandle,
+        const ClientInteractionPayload* payload,
+        std::unordered_map<std::string, std::string>& propagationHeaders) = 0;
+    virtual OTEL_SDK_STATUS_CODE endClientInteraction(
+        OTEL_SDK_HANDLE_REQ reqHandle,
+        bool ignoreBackend,
+        EndClientInteractionPayload *payload) = 0;
 };
 
 // Tracks request flow in agent using sdkWrapper
@@ -89,6 +99,13 @@ public:
         OTEL_SDK_HANDLE_REQ reqHandle,
         bool ignoreBackend,
         EndInteractionPayload *payload) override;
+    OTEL_SDK_STATUS_CODE startClientInteraction(
+        OTEL_SDK_HANDLE_REQ reqHandle,
+        const ClientInteractionPayload* payload,
+        std::unordered_map<std::string, std::string>& propagationHeaders) override;
+    OTEL_SDK_API OTEL_SDK_STATUS_CODE endClientInteraction(
+        OTEL_SDK_HANDLE_REQ reqHandle,
+        EndClientInteractionPayload *payload) override;
 
 protected:
     std::shared_ptr<otel::core::sdkwrapper::ISdkWrapper> m_sdkWrapper;

@@ -54,128 +54,16 @@ otel_ngx_module otel_monitored_modules[] = {
     {
         "ngx_http_realip_module",
         0,
-        {NGX_HTTP_POST_READ_PHASE, NGX_HTTP_PREACCESS_PHASE},
+        {NGX_HTTP_POST_READ_PHASE},
         ngx_http_otel_realip_handler,
         0,
         2
-    },
-    {
-        "ngx_http_rewrite_module",
-        0,
-        {NGX_HTTP_SERVER_REWRITE_PHASE, NGX_HTTP_REWRITE_PHASE},
-        ngx_http_otel_rewrite_handler,
-        0,
-        2
-    },
-    {
-        "ngx_http_limit_conn_module",
-        0,
-        {NGX_HTTP_PREACCESS_PHASE},
-        ngx_http_otel_limit_conn_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_limit_req_module",
-        0,
-        {NGX_HTTP_PREACCESS_PHASE},
-        ngx_http_otel_limit_req_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_auth_request_module",
-        0,
-        {NGX_HTTP_ACCESS_PHASE},
-        ngx_http_otel_auth_request_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_auth_basic_module",
-        0,
-        {NGX_HTTP_ACCESS_PHASE},
-        ngx_http_otel_auth_basic_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_access_module",
-        0,
-        {NGX_HTTP_ACCESS_PHASE},
-        ngx_http_otel_access_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_static_module",
-        0,
-        {NGX_HTTP_CONTENT_PHASE},
-        ngx_http_otel_static_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_gzip_static_module",
-        0,
-        {NGX_HTTP_CONTENT_PHASE},
-        ngx_http_otel_gzip_static_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_dav_module",
-        0,
-        {NGX_HTTP_CONTENT_PHASE},
-        ngx_http_otel_dav_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_autoindex_module",
-        0,
-        {NGX_HTTP_CONTENT_PHASE},
-        ngx_http_otel_autoindex_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_index_module",
-        0,
-        {NGX_HTTP_CONTENT_PHASE},
-        ngx_http_otel_index_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_random_index_module",
-        0,
-        {NGX_HTTP_CONTENT_PHASE},
-        ngx_http_otel_random_index_handler,
-        0,
-        1
     },
     {
         "ngx_http_log_module",
         0,
         {NGX_HTTP_LOG_PHASE},
         ngx_http_otel_log_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_try_files_module",
-        0,
-        {NGX_HTTP_PRECONTENT_PHASE},
-        ngx_http_otel_try_files_handler,
-        0,
-        1
-    },
-    {
-        "ngx_http_mirror_module",
-        0,
-        {NGX_HTTP_PRECONTENT_PHASE},
-        ngx_http_otel_mirror_handler,
         0,
         1
     }
@@ -548,7 +436,7 @@ static ngx_int_t ngx_http_opentelemetry_init(ngx_conf_t *cf)
         ngx_uint_t                   phase_index;
         ngx_int_t                    res;
 
-        ngx_writeError(cf->cycle->log, __func__, "Starting Opentelemetry Module init");
+        // ngx_writeError(cf->cycle->log, __func__, "Starting Opentelemetry Module init");
 
         cp = ap = pap = srp = prp = rp = lp = pcp = 0;
 
@@ -586,7 +474,7 @@ static ngx_int_t ngx_http_opentelemetry_init(ngx_conf_t *cf)
 
         cmcf = (ngx_http_core_main_conf_t*)ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-        ngx_writeError(cf->cycle->log, __func__, "Registering handlers for modules in different phases");
+        // ngx_writeError(cf->cycle->log, __func__, "Registering handlers for modules in different phases");
 
         for (m = 0; cf->cycle->modules[m]; m++) {
             if (cf->cycle->modules[m]->type == NGX_HTTP_MODULE) {
@@ -682,7 +570,7 @@ static ngx_int_t ngx_http_opentelemetry_init(ngx_conf_t *cf)
         /* hostname is extracted from the nginx cycle. The attribute hostname is needed
         for OTEL spec and the only place it is available is cf->cycle
         */
-        ngx_writeError(cf->cycle->log, __func__, "Opentelemetry Module init completed!");
+        // ngx_writeError(cf->cycle->log, __func__, "Opentelemetry Module init completed!");
     } catch(const std::exception& e) {
         ngx_writeError(cf->cycle->log, __func__, "catch exception: %s", e.what());
         return NGX_ERROR;
@@ -952,6 +840,115 @@ static void otel_stopInteraction(ngx_http_request_t* r, const char* module_name,
         free (backendName);
         free (code);
         free (msg);
+    } catch(const std::exception& e) {
+        ngx_writeError(r->connection->log, __func__, "Exception: %s", e.what());
+    }
+}
+
+static OTEL_SDK_STATUS_CODE otel_startClientInteraction(ngx_http_request_t* r){
+    OTEL_SDK_STATUS_CODE res = OTEL_SUCCESS;
+
+    try {
+        if(!r || r->internal)
+        {
+            ngx_writeTrace(r->connection->log, __func__, "Not a Main Request(sub-request or internal redirect)");
+            return res;
+        }
+        else if (!ngx_initialize_opentelemetry(r))    /* check if Otel Agent Core is initialized */
+        {
+            return res;
+        }
+
+        ngx_http_otel_handles_t* ctx;
+        ctx = (ngx_http_otel_handles_t*)ngx_http_get_module_ctx(r, ngx_http_opentelemetry_module);
+        if(ctx && ctx->otel_req_handle_key){
+            OTEL_SDK_ENV_RECORD* propagationHeaders = (OTEL_SDK_ENV_RECORD*)ngx_pcalloc(r->pool, 5 * sizeof(OTEL_SDK_ENV_RECORD));
+            if (propagationHeaders == NULL)
+            {
+                ngx_writeError(r->connection->log, __func__, "Failed to allocate memory for propagation headers");
+                return OTEL_STATUS(fail);
+            }
+            ngx_writeError(r->connection->log, __func__, "Starting a new client interaction");
+            int ix = 0;
+            // todo span name
+            //   http.method: POST
+            //   http.response_content_length: 2
+            //   http.status_code: 200
+            //   http.url: http://keta-neuralert-dc:8090/api/v1/neuralert-dc/_keta_event
+            //   net.peer.name: keta-neuralert-dc
+            //   net.peer.port: 8090
+            //   net.protocol.name: http
+            //   net.protocol.version: 1.1
+            res = startClientInteraction((void*)ctx->otel_req_handle_key, propagationHeaders, &ix);
+
+            if (OTEL_ISSUCCESS(res))
+            {
+                removeUnwantedHeader(r);
+                otel_payload_decorator(r, propagationHeaders, ix);
+                ngx_writeError(r->connection->log, __func__, "Interaction client begin successful");
+            }
+            else
+            {
+                ngx_writeError(r->connection->log, __func__, "Error: Interaction client begin result code: %d", res);
+            }
+            for(int i=0;i<ix;i++)
+            {
+              if(propagationHeaders[i].name)
+                free((char *)propagationHeaders[i].name);
+              if(propagationHeaders[i].value)
+                free((char *)propagationHeaders[i].value);
+            }
+        }
+    } catch(const std::exception& e) {
+        ngx_writeError(r->connection->log, __func__, "Error: exception: %s", e.what());
+        return OTEL_STATUS(fail);
+    }
+    return res;
+}
+
+static void otel_stopClientInteraction(ngx_http_request_t* r, void* request_handle_key)
+{
+    OTEL_SDK_STATUS_CODE res = OTEL_SUCCESS;
+    try {
+        if(!r || r->internal)
+        {
+            return;
+        }
+
+        OTEL_SDK_HANDLE_REQ otel_req_handle_key = OTEL_SDK_NO_HANDLE;
+        ngx_http_otel_handles_t* ctx = (ngx_http_otel_handles_t*)ngx_http_get_module_ctx(r, ngx_http_opentelemetry_module);
+        if (r->pool == NULL && request_handle_key != NULL)
+        {
+            otel_req_handle_key = request_handle_key;
+        }
+        else if (ctx && ctx->otel_req_handle_key)
+        {
+            otel_req_handle_key = ctx->otel_req_handle_key;
+        }
+        else
+        {
+            return;
+        }
+
+        ngx_writeTrace(r->connection->log, __func__, "Stopping the Client Interaction");
+
+        unsigned int errCode=0;
+        if(otel_requestHasErrors(r))
+        {
+            errCode=(unsigned int)otel_getErrorCode(r);
+        }
+        ngx_http_upstream_t *upstream = r -> upstream;
+        if (upstream && upstream->peer.name && upstream->peer.name->data) {
+            char *peer_name = (char*)ngx_pcalloc(r->pool, strlen(upstream->peer.name->data));
+            strcpy(peer_name,(const char*) upstream->peer.name->data);
+            res = stopClientInteraction(otel_req_handle_key, peer_name, errCode);
+        } else {
+            res = stopClientInteraction(otel_req_handle_key, "", errCode);
+        }
+        if (OTEL_ISFAIL(res))
+        {
+            ngx_writeError(r->connection->log, __func__, "Error: Stop Client Interaction failed, result code: %d", res);
+        }
     } catch(const std::exception& e) {
         ngx_writeError(r->connection->log, __func__, "Exception: %s", e.what());
     }
@@ -1237,8 +1234,6 @@ static void stopMonitoringRequest(ngx_http_request_t* r,
     } catch(const std::exception& e) {
         ngx_writeError(r->connection->log, __func__, "Exception: %s", e.what());
     }
-
-    return;
 }
 
 static void startMonitoringRequest(ngx_http_request_t* r){
@@ -1329,30 +1324,6 @@ static void startMonitoringRequest(ngx_http_request_t* r){
     }
 }
 
-static ngx_int_t ngx_http_otel_rewrite_handler(ngx_http_request_t *r){
-    //otel_startInteraction(r, "ngx_http_rewrite_module");
-    ngx_int_t rvalue = h[NGX_HTTP_REWRITE_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_rewrite_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_limit_conn_handler(ngx_http_request_t *r){
-    //otel_startInteraction(r, "ngx_http_limit_conn_module");
-    ngx_int_t rvalue = h[NGX_HTTP_LIMIT_CONN_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_limit_conn_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_limit_req_handler(ngx_http_request_t *r){
-    //otel_startInteraction(r, "ngx_http_limit_req_module");
-    ngx_int_t rvalue = h[NGX_HTTP_LIMIT_REQ_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_limit_req_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
 static ngx_int_t ngx_http_otel_realip_handler(ngx_http_request_t *r){
 
     // This will be the first hanndler to be encountered,
@@ -1360,166 +1331,12 @@ static ngx_int_t ngx_http_otel_realip_handler(ngx_http_request_t *r){
     if(!r->internal)
     {
         startMonitoringRequest(r);
+        otel_startClientInteraction(r);
     }
 
-    otel_startInteraction(r, "ngx_http_realip_module");
+    //otel_startInteraction(r, "ngx_http_realip_module");
     ngx_int_t rvalue = h[NGX_HTTP_REALIP_MODULE_INDEX](r);
-    otel_stopInteraction(r, "ngx_http_realip_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_auth_request_handler(ngx_http_request_t *r){
-    //otel_startInteraction(r, "ngx_http_auth_request_module");
-    ngx_int_t rvalue = h[NGX_HTTP_LIMIT_AUTH_REQ_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_auth_request_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_auth_basic_handler(ngx_http_request_t *r){
-    //otel_startInteraction(r, "ngx_http_auth_basic_module");
-    ngx_int_t rvalue = h[NGX_HTTP_AUTH_BASIC_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_auth_basic_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_access_handler(ngx_http_request_t *r){
-    //otel_startInteraction(r, "ngx_http_access_module");
-    ngx_int_t rvalue = h[NGX_HTTP_ACCESS_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_access_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_static_handler(ngx_http_request_t *r){
-    //otel_startInteraction(r, "ngx_http_static_module");
-    ngx_int_t rvalue = h[NGX_HTTP_STATIC_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_static_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_gzip_static_handler(ngx_http_request_t *r){
-    //otel_startInteraction(r, "ngx_http_gzip_static_module");
-    ngx_int_t rvalue = h[NGX_HTTP_GZIP_STATIC_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_gzip_static_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_dav_handler(ngx_http_request_t *r){
-    //otel_startInteraction(r, "ngx_http_dav_module");
-    ngx_int_t rvalue = h[NGX_HTTP_DAV_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_dav_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_autoindex_handler(ngx_http_request_t *r){
-    //otel_startInteraction(r, "ngx_http_autoindex_module");
-    ngx_int_t rvalue = h[NGX_HTTP_AUTO_INDEX_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_autoindex_module", OTEL_SDK_NO_HANDLE);
-
-    return rvalue;
-}
-
-/*  autoindex, index and randomindex handlers get called during
-    internal redirection. In case of index and randomIndex handlers,
-    it has been observed that 'ctx' ptr gets cleaned up from request
-    pool and r->internal gets set to 1. But, we need 'ctx' to stop the
-    interaction.
-    Therefore, as a special handling, we store the ctx pointer and reset
-    before stopping the interaction. We avoid starting/stopping
-    interaction/request when r->intenal is 1. But in this case,
-    when we started the interaction r->internal is 0 but when the
-    actual handler calls completes, it internally transforms r->internal
-    to 1. Therefore, we need extra handling for r->internal as well.
-*/
-
-static ngx_int_t ngx_http_otel_index_handler(ngx_http_request_t *r){
-    bool old_internal = r->internal;
-    ngx_http_otel_handles_t* old_ctx;
-
-    otel_startInteraction(r, "ngx_http_index_module");
-    old_ctx = (ngx_http_otel_handles_t*)ngx_http_get_module_ctx(r, ngx_http_opentelemetry_module);
-    ngx_int_t rvalue = h[NGX_HTTP_INDEX_MODULE_INDEX](r);
-    bool new_internal = r->internal;
-    if (new_internal == true && new_internal != old_internal) {
-        ngx_http_set_ctx(r, old_ctx, ngx_http_opentelemetry_module);
-        r->internal = 0;
-        otel_stopInteraction(r, "ngx_http_index_module", OTEL_SDK_NO_HANDLE);
-        r->internal = 1;
-    } else {
-        otel_stopInteraction(r, "ngx_http_index_module", OTEL_SDK_NO_HANDLE);
-    }
-
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_random_index_handler(ngx_http_request_t *r){
-    bool old_internal = r->internal;
-    ngx_http_otel_handles_t* old_ctx;
-
-    old_ctx = (ngx_http_otel_handles_t*)ngx_http_get_module_ctx(r, ngx_http_opentelemetry_module);
-    otel_startInteraction(r, "ngx_http_random_index_module");
-    ngx_int_t rvalue = h[NGX_HTTP_RANDOM_INDEX_MODULE_INDEX](r);
-    bool new_internal = r->internal;
-    if (new_internal == true && new_internal != old_internal) {
-        ngx_http_set_ctx(r, old_ctx, ngx_http_opentelemetry_module);
-        r->internal = 0;
-        otel_stopInteraction(r, "ngx_http_random_index_module", OTEL_SDK_NO_HANDLE);
-        r->internal = 1;
-
-    } else {
-        otel_stopInteraction(r, "ngx_http_random_index_module", OTEL_SDK_NO_HANDLE);
-    }
-
-    return rvalue;
-}
-
-/*  tryfiles handler gets called with try_files tag. In this case
-    also, internal redirection happens. But on completion of this
-    handler, request pool gets wiped out and since ctx is created
-    in request pool, its no longer valid. However, request hanlde
-    is not created in request pool. Therefore,we save the request
-    handle and pass it along to stop the interaction.  Also,   we
-    stop the request using the same request handle.
-*/
-
-
-static ngx_int_t ngx_http_otel_try_files_handler(ngx_http_request_t *r) {
-    bool old_internal = r->internal;
-    ngx_http_otel_handles_t* old_ctx;
-
-    OTEL_SDK_HANDLE_REQ request_handle = OTEL_SDK_NO_HANDLE;
-    old_ctx = (ngx_http_otel_handles_t*)ngx_http_get_module_ctx(r, ngx_http_opentelemetry_module);
-    if (old_ctx && old_ctx->otel_req_handle_key) {
-        request_handle = old_ctx->otel_req_handle_key;
-    }
-
-    otel_startInteraction(r, "ngx_http_otel_try_files_handler");
-    ngx_int_t rvalue = h[NGX_HTTP_TRY_FILES_MODULE_INDEX](r);
-    bool new_internal = r->internal;
-    if (new_internal == true && new_internal != old_internal) {
-        r->internal = 0;
-        otel_stopInteraction(r, "ngx_http_otel_try_files_handler", request_handle);
-        r->internal = 1;
-    } else {
-        otel_stopInteraction(r, "ngx_http_otel_try_files_handler", OTEL_SDK_NO_HANDLE);
-    }
-
-    if (!r->pool) {
-        stopMonitoringRequest(r, request_handle);
-    }
-    return rvalue;
-}
-
-static ngx_int_t ngx_http_otel_mirror_handler(ngx_http_request_t *r) {
-    //otel_startInteraction(r, "ngx_http_otel_mirror_handler");
-    ngx_int_t rvalue = h[NGX_HTTP_MIRROR_MODULE_INDEX](r);
-    //otel_stopInteraction(r, "ngx_http_otel_mirror_handler", OTEL_SDK_NO_HANDLE);
+    //otel_stopInteraction(r, "ngx_http_realip_module", OTEL_SDK_NO_HANDLE);
 
     return rvalue;
 }
@@ -1528,6 +1345,7 @@ static ngx_int_t ngx_http_otel_log_handler(ngx_http_request_t *r){
     //This will be last handler to be be encountered before a request ends and response is finally sent back to client
     // Here, End the main trace, span created by Webserver Agent and the collected data will be passed to the backend
     // It will work as ngx_http_opentelemetry_log_transaction_end
+    otel_stopClientInteraction(r, OTEL_SDK_NO_HANDLE);
     stopMonitoringRequest(r, OTEL_SDK_NO_HANDLE);
 
     ngx_int_t rvalue = h[NGX_HTTP_LOG_MODULE_INDEX](r);
@@ -1757,6 +1575,8 @@ static void fillRequestPayload(request_payload* req_payload, ngx_http_request_t*
 
         req_payload->request_headers[request_headers_idx].name = (char*)(h->key).data;
         req_payload->request_headers[request_headers_idx].value = (char*)(h->value).data;
+        // todo
+        // ngx_writeError(r->connection->log, __func__, "header: %s, value: %s", (char*)(h->key).data, (char*)(h->value).data);
         if (req_payload->request_headers[request_headers_idx].value == NULL) {
             char* emptyString = new char[1];
             emptyString[0] = '\0';

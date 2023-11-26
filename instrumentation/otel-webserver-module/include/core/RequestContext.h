@@ -47,7 +47,11 @@ public:
     ~RequestContext() = default;
 
     std::shared_ptr<sdkwrapper::IScopedSpan> rootSpan() const { return m_rootSpan; }
+    std::shared_ptr<sdkwrapper::IScopedSpan> clientSpan() const { return m_clientSpan; }
 
+    void addClientSpan(std::shared_ptr<sdkwrapper::IScopedSpan> clientSpan) {
+        m_clientSpan = clientSpan;
+    }
     void addInteraction(std::shared_ptr<sdkwrapper::IScopedSpan> interaction) {
         m_interactions.push(interaction);
     }
@@ -75,6 +79,7 @@ public:
 
 private:
     std::shared_ptr<sdkwrapper::IScopedSpan> m_rootSpan;
+    std::shared_ptr<sdkwrapper::IScopedSpan> m_clientSpan;
     std::string m_contextName;
 
     /**

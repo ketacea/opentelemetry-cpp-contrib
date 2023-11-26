@@ -178,3 +178,40 @@ OTEL_SDK_STATUS_CODE stopModuleInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, c
 
     return res;
 }
+
+
+OTEL_SDK_STATUS_CODE startClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, OTEL_SDK_ENV_RECORD* propagationHeaders, int *ix)
+{
+    OTEL_SDK_STATUS_CODE res = OTEL_SUCCESS;
+    std::unordered_map<std::string, std::string> pHeaders;
+
+    // todo uri span name
+    std::unique_ptr<otel::core::InteractionPayload> payload(new otel::core::ClientInteractionPayload("", "", false));
+    res = wsAgent.startClientInteraction(req_handle_key, payload.get(), pHeaders);
+
+    if (OTEL_ISSUCCESS(res))
+    {
+        if (!pHeaders.empty())
+        {
+            for (auto itr = pHeaders.begin(); itr != pHeaders.end(); itr++)
+            {
+                char *temp_key = (char*)malloc(itr->first.size() + 1);
+                std::strcpy(temp_key, itr->first.c_str());
+                propagationHeaders[*ix].name = temp_key;
+                char *temp_value= (char*)malloc(itr->second.size() + 1);
+                std::strcpy(temp_value, itr->second.c_str());
+                 propagationHeaders[*ix].value = temp_value;
+                ++(*ix);
+            }
+        }
+    }
+    return res;
+}
+
+OTEL_SDK_STATUS_CODE stopClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, char* peer_name)
+{
+    std::unique_ptr<otel::core::EndInteractionPayload> payload(new otel::core::EndClientInteractionPayload("", 0, ""));
+    OTEL_SDK_STATUS_CODE res = wsAgent.endClientInteraction(req_handle_key, false, payload.get());
+
+    return res;
+}
