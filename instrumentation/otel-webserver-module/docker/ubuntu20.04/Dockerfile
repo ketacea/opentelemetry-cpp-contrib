@@ -61,26 +61,6 @@ RUN git clone --shallow-submodules --depth 1 --recurse-submodules -b v${GRPC_VER
   && make install \
   && cd ../../..
 
-# install opentelemetry
-RUN mkdir -p dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/lib \
-    && mkdir -p dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/include \
-    && git clone https://github.com/open-telemetry/opentelemetry-cpp \
-    && cd opentelemetry-cpp/ \
-    && git checkout tags/v${OPENTELEMETRY_VERSION} -b v${OPENTELEMETRY_VERSION} \
-    && git submodule update --init --recursive \
-    && mkdir build \
-    && cd build \
-    && cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DWITH_OTLP=ON -DCMAKE_INSTALL_PREFIX=/dependencies/opentelemetry/${OPENTELEMETRY_VERSION} \
-    && cmake --build . --target all \
-    && cd .. \
-    && find . -name "*.so" -type f -exec cp {} /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/lib/ \; \
-    && cp build/libopentelemetry_proto.a /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/lib \
-    && cp -r api/include/ /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/ \
-    && for dir in exporters/*; do if [ -d "$dir" ]; then cp -rf "$dir/include" /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/; fi; done \
-    && cp -r sdk/include/ /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/ \
-    && cp -r build/generated/third_party/opentelemetry-proto/opentelemetry/proto/ /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/include/opentelemetry/ \
-    && cd .. && rm -rf opentelemetry-cpp
-
 #install Apr
 RUN mkdir -p dependencies/apr/${APR_VERSION} \
     && wget https://archive.apache.org/dist/apr/apr-${APR_VERSION}.tar.gz --no-check-certificate \
@@ -175,22 +155,25 @@ RUN mkdir -p dependencies/pcre/${PCRE_VERSION}/ \
     && make && make install \
     && cd .. && rm -rf ${PCRE_VERSION}.tar.gz && rm -rf pcre-${PCRE_VERSION}
 
-# install nginx
-RUN wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz \
-    && tar -xvf nginx-${NGINX_VERSION}.tar.gz -C /build-dependencies \
-    && rm -rf nginx-${NGINX_VERSION}.tar.gz
-
-# Install Nginx stable version
-RUN apt install curl gnupg2 ca-certificates lsb-release ubuntu-keyring -y \
-    && curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
-    | tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null \
-    && gpg --dry-run --quiet --import --import-options import-show /usr/share/keyrings/nginx-archive-keyring.gpg; exit 0
-RUN echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] \
-    http://nginx.org/packages/ubuntu `lsb_release -cs` nginx" \
-    | tee /etc/apt/sources.list.d/nginx.list \
-    && echo "Package: *\nPin: origin nginx.org\nPin: release o=nginx\nPin-Priority: 900\n" \
-    | tee /etc/apt/preferences.d/99nginx \
-    && apt update -y && apt install nginx -y
+# install opentelemetry
+RUN mkdir -p dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/lib \
+    && mkdir -p dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/include \
+    && git clone https://github.com/open-telemetry/opentelemetry-cpp \
+    && cd opentelemetry-cpp/ \
+    && git checkout tags/v${OPENTELEMETRY_VERSION} -b v${OPENTELEMETRY_VERSION} \
+    && git submodule update --init --recursive \
+    && mkdir build \
+    && cd build \
+    && cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_TESTING=OFF -DWITH_EXAMPLES=OFF -DBUILD_SHARED_LIBS=ON -DWITH_ABSEIL=OFF -DWITH_STL=OFF -DWITH_OTLP=ON -DWITH_OTLP_GRPC=ON -DWITH_OTLP_HTTP=OFF -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_PREFIX=/dependencies/opentelemetry/${OPENTELEMETRY_VERSION} \
+    && cmake --build . --target all \
+    && cd .. \
+    && find . -name "*.so" -type f -exec cp {} /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/lib/ \; \
+    && cp build/libopentelemetry_proto.a /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/lib \
+    && cp -r api/include/ /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/ \
+    && for dir in exporters/*; do if [ -d "$dir" ]; then cp -rf "$dir/include" /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/; fi; done \
+    && cp -r sdk/include/ /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/ \
+    && cp -r build/generated/third_party/opentelemetry-proto/opentelemetry/proto/ /dependencies/opentelemetry/${OPENTELEMETRY_VERSION}/include/opentelemetry/ \
+    && cd .. && rm -rf opentelemetry-cpp
 
 # Build Webserver Module
 COPY . /otel-webserver-module
@@ -198,23 +181,4 @@ COPY . /otel-webserver-module
 RUN cp -r /dependencies /otel-webserver-module/ \
     && cp -r /build-dependencies /otel-webserver-module/ \
     && cd otel-webserver-module \
-    && ./gradlew assembleWebServerModule -DtargetSystem=ubuntu
-
-RUN cd /otel-webserver-module/build \
-    && tar -xf opentelemetry-webserver-sdk-x64-linux.tgz \
-    && mv -f opentelemetry-webserver-sdk /opt/ \
-    && cd ../ \
-    && cp opentelemetry_module.conf /etc/apache2/opentelemetry_module.conf \
-    && sed -i "s/libmod_apache_otel22.so/libmod_apache_otel.so/g" /etc/apache2/opentelemetry_module.conf \
-    && echo 'Include opentelemetry_module.conf' >> /etc/apache2/apache2.conf \
-    && cd /opt/opentelemetry-webserver-sdk \
-    && ./install.sh \
-    && cd /
-
-RUN cd /otel-webserver-module/build \
-    && cp ../conf/nginx/opentelemetry_module.conf /opt/ \
-    && sed -i '5i load_module /opt/opentelemetry-webserver-sdk/WebServerModule/Nginx/1.22.0/ngx_http_opentelemetry_module.so;' /etc/nginx/nginx.conf \
-    && sed -i '33i include /opt/opentelemetry_module.conf;' /etc/nginx/nginx.conf \
-    && cd /opt/opentelemetry-webserver-sdk \
-    && ./install.sh \
-    && cd /
+    && ./gradlew assembleWebServerModule

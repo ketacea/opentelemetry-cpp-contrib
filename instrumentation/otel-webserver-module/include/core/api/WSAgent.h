@@ -75,6 +75,16 @@ public:
         bool ignoreBackend,
         EndInteractionPayload *payload);
 
+    OTEL_SDK_STATUS_CODE startClientInteraction(
+        OTEL_SDK_HANDLE_REQ reqHandle,
+        const ClientInteractionPayload* payload,
+        std::unordered_map<std::string, std::string>& propagationHeaders);
+
+    OTEL_SDK_STATUS_CODE endClientInteraction(
+        OTEL_SDK_HANDLE_REQ reqHandle,
+        bool ignoreBackend,
+        EndClientInteractionPayload *payload);
+
     /**
     * Add webserver context to OpenTelemetry configuration for multi-tenancy.
     *

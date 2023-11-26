@@ -157,6 +157,38 @@ WSAgent::endInteraction(
     return OTEL_STATUS(fail);
 }
 
+OTEL_SDK_STATUS_CODE
+WSAgent::startClientInteraction(
+    OTEL_SDK_HANDLE_REQ reqHandle,
+    const InteractionPayload* payload,
+    std::unordered_map<std::string, std::string>& propagationHeaders)
+{
+    RequestContext *ctx = static_cast<RequestContext*>(reqHandle);
+    auto context = ctx->getContextName();
+    auto *engine = mAgentCore->getRequestProcessor(context);
+    if (nullptr != engine)
+    {
+        return engine->startClientInteraction(reqHandle, payload, propagationHeaders);
+    }
+    return OTEL_STATUS(fail);
+}
+
+OTEL_SDK_STATUS_CODE
+WSAgent::endClientInteraction(
+    OTEL_SDK_HANDLE_REQ reqHandle,
+    bool ignoreBackend,
+    EndInteractionPayload *payload)
+{
+    RequestContext *ctx = static_cast<RequestContext*>(reqHandle);
+    auto context = ctx->getContextName();
+    auto *engine = mAgentCore->getRequestProcessor(context);
+    if (nullptr != engine)
+    {
+        return engine->endClientInteraction(reqHandle, ignoreBackend, payload);
+    }
+    return OTEL_STATUS(fail);
+}
+
 int
 WSAgent::addWSContextToCore(
     const char* wscontext,

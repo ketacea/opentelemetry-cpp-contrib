@@ -103,6 +103,7 @@ OTEL_SDK_STATUS_CODE RequestProcessingEngine::startRequest(
         const std::string key = std::string(http_request_header) + std::string(itr->first);
         const std::string value = std::string(itr->second);
         span->AddAttribute(key, value);
+        LOG4CXX_ERROR(mLogger, "add header: " << key << ", value: " << value);
     }
 
     auto& attributes = payload->get_attributes();
@@ -221,7 +222,7 @@ OTEL_SDK_STATUS_CODE RequestProcessingEngine::startInteraction(
     // TODO : confirm and update name later
     std::string spanName = payload->moduleName + "_" + payload->phaseName;
     keyValueMap["interactionType"] = "EXIT_CALL";
-    auto interactionSpan = m_sdkWrapper->CreateSpan(spanName, SpanKind::CLIENT, keyValueMap);
+    auto interactionSpan = m_sdkWrapper->CreateSpan(spanName, SpanKind::INTERNAL, keyValueMap);
     LOG4CXX_TRACE(mLogger, "Client Span started with SpanName: " << spanName
         << " Span Id: " << interactionSpan.get());
     m_sdkWrapper->PopulatePropagationHeaders(propagationHeaders);
@@ -290,6 +291,91 @@ OTEL_SDK_API OTEL_SDK_STATUS_CODE RequestProcessingEngine::endInteraction(
     LOG4CXX_TRACE(mLogger, "Ending Span with id: " << interactionSpan.get());
     interactionSpan->End();
     rContext->removeInteraction();
+    return OTEL_SUCCESS;
+}
+
+OTEL_SDK_STATUS_CODE RequestProcessingEngine::startClientInteraction(
+    OTEL_SDK_HANDLE_REQ reqHandle,
+    const InteractionPayload* payload,
+    std::unordered_map<std::string, std::string>& propagationHeaders) {
+
+    if (!reqHandle) {
+        LOG4CXX_ERROR(mLogger, __FUNCTION__ << " " << OTEL_STATUS(handle_pointer_is_null));
+        return OTEL_STATUS(handle_pointer_is_null);
+    }
+
+    if (!payload) {
+        LOG4CXX_ERROR(mLogger, __FUNCTION__ << " " << OTEL_STATUS(payload_reflector_is_null));
+        return OTEL_STATUS(payload_reflector_is_null);
+    }
+
+    RequestContext* requestContext = (RequestContext*)reqHandle;
+
+    // Create client span for this interaction. And set it in RequestContext object.
+    otel::core::sdkwrapper::OtelKeyValueMap keyValueMap;
+
+    // TODO : confirm and update name later
+//    std::string uri(payload->get_uri());
+//    std::string spanName = m_spanNamer->getSpanName(uri);
+    keyValueMap["interactionType"] = "REQ";
+    auto interactionSpan = m_sdkWrapper->CreateSpan("GET", SpanKind::CLIENT, keyValueMap);
+    LOG4CXX_TRACE(mLogger, "Client Span started with SpanName: " << "spanName"
+        << " Span Id: " << interactionSpan.get());
+    m_sdkWrapper->PopulatePropagationHeaders(propagationHeaders);
+
+    // Add the interaction to the request context.
+    requestContext->addClientSpan(interactionSpan);
+    return OTEL_SUCCESS;
+}
+
+OTEL_SDK_API OTEL_SDK_STATUS_CODE RequestProcessingEngine::endClientInteraction(
+    OTEL_SDK_HANDLE_REQ reqHandle,
+    bool ignoreBackend,
+    EndInteractionPayload *payload) {
+
+    if (!reqHandle) {
+        LOG4CXX_ERROR(mLogger, __FUNCTION__ << " " << OTEL_STATUS(handle_pointer_is_null));
+        return OTEL_STATUS(handle_pointer_is_null);
+    }
+
+    if (!payload) {
+        LOG4CXX_ERROR(mLogger, __FUNCTION__ << " " << OTEL_STATUS(payload_reflector_is_null));
+        return OTEL_STATUS(payload_reflector_is_null);
+    }
+
+    RequestContext* requestContext = (RequestContext*)reqHandle;
+
+    auto clientSpan = requestContext->clientSpan();
+    if (!clientSpan) {
+        // error : requestContext has no corresponding interaction.
+        LOG4CXX_TRACE(mLogger, __FUNCTION__ << " " << OTEL_STATUS(invalid_context));
+        return OTEL_STATUS(invalid_context);
+    }
+    clientSpan->AddAttribute("test", "test");
+
+    // If errorCode is 0 or errMsg is empty, there is no error.
+    bool isError = payload->errorCode != 0 && !payload->errorMsg.empty();
+    if (isError) {
+        if (payload->errorCode >= HTTP_ERROR_1XX &&   payload->errorCode < HTTP_ERROR_4XX ) {
+            clientSpan->SetStatus(StatusCode::Unset);
+        }
+        else if (payload->errorCode >= HTTP_ERROR_4XX &&   payload->errorCode < HTTP_ERROR_5XX ) {
+            if (clientSpan->GetSpanKind() == SpanKind::SERVER)
+                clientSpan->SetStatus(StatusCode::Unset);
+            else
+                clientSpan->SetStatus(StatusCode::Error, payload->errorMsg);
+
+        } else {
+            clientSpan->SetStatus(StatusCode::Error, payload->errorMsg);
+        }
+        clientSpan->AddAttribute("error_code", payload->errorCode);
+        LOG4CXX_TRACE(mLogger, "Span updated with error Code: " << payload->errorCode);
+    } else {
+        clientSpan->SetStatus(StatusCode::Ok);
+    }
+
+    LOG4CXX_TRACE(mLogger, "Ending Span with id: " << clientSpan.get());
+    clientSpan->End();
     return OTEL_SUCCESS;
 }
 
