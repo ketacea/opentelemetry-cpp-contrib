@@ -20,7 +20,6 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
-#include <string>
 #include <stdbool.h>
 #include "../../include/core/api/OpentelemetrySdk.h"
 #include "../../include/core/api/opentelemetry_ngx_api.h"
@@ -66,7 +65,7 @@ mod_handler h[NGX_HTTP_MAX_HANDLE_COUNT];
  Structure for storing module details for mapping module handlers with their respective module
 */
 typedef struct {
-        std::string  name;
+        char*  name;
         ngx_uint_t ngx_index;
         ngx_http_phases ph[2];
         mod_handler handler;
