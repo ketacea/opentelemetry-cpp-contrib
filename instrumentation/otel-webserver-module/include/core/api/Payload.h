@@ -140,7 +140,7 @@ struct ClientInteractionPayload
 
 	ClientInteractionPayload() {}
 
-	ClientInteractionPayload(std::string module, std::string phase, bool b) : moduleName(module), phaseName(phase), resolveBackends(b)
+	ClientInteractionPayload(std::string u) : uri(u)
 	{}
 };
 

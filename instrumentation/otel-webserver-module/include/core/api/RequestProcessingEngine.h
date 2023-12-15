@@ -70,7 +70,6 @@ public:
         std::unordered_map<std::string, std::string>& propagationHeaders) = 0;
     virtual OTEL_SDK_STATUS_CODE endClientInteraction(
         OTEL_SDK_HANDLE_REQ reqHandle,
-        bool ignoreBackend,
         EndClientInteractionPayload *payload) = 0;
 };
 

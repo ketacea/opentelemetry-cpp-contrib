@@ -82,7 +82,6 @@ public:
 
     OTEL_SDK_STATUS_CODE endClientInteraction(
         OTEL_SDK_HANDLE_REQ reqHandle,
-        bool ignoreBackend,
         EndClientInteractionPayload *payload);
 
     /**

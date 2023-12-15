@@ -160,7 +160,7 @@ WSAgent::endInteraction(
 OTEL_SDK_STATUS_CODE
 WSAgent::startClientInteraction(
     OTEL_SDK_HANDLE_REQ reqHandle,
-    const InteractionPayload* payload,
+    const ClientInteractionPayload* payload,
     std::unordered_map<std::string, std::string>& propagationHeaders)
 {
     RequestContext *ctx = static_cast<RequestContext*>(reqHandle);
@@ -176,15 +176,14 @@ WSAgent::startClientInteraction(
 OTEL_SDK_STATUS_CODE
 WSAgent::endClientInteraction(
     OTEL_SDK_HANDLE_REQ reqHandle,
-    bool ignoreBackend,
-    EndInteractionPayload *payload)
+    EndClientInteractionPayload *payload)
 {
     RequestContext *ctx = static_cast<RequestContext*>(reqHandle);
     auto context = ctx->getContextName();
     auto *engine = mAgentCore->getRequestProcessor(context);
     if (nullptr != engine)
     {
-        return engine->endClientInteraction(reqHandle, ignoreBackend, payload);
+        return engine->endClientInteraction(reqHandle, payload);
     }
     return OTEL_STATUS(fail);
 }

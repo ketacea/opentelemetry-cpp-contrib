@@ -18,7 +18,7 @@ add_library(otel_ngx_module SHARED
   src/otel_ngx_module.cpp
   src/otel_ngx_module_modules.c
   src/propagate.cpp
-  src/script.cpp
+  src/script.c
 )
 
 target_compile_options(otel_ngx_module

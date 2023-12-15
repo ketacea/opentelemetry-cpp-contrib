@@ -17,7 +17,7 @@ ngx_module_srcs=" \
   $ngx_addon_dir/src/nginx_config.cpp \
   $ngx_addon_dir/src/otel_ngx_module.cpp \
   $ngx_addon_dir/src/propagate.cpp \
-  $ngx_addon_dir/src/script.cpp \
+  $ngx_addon_dir/src/script.c \
   $ngx_addon_dir/src/toml.c \
   $ngx_addon_dir/src/trace_context.cpp \
 "
