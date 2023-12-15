@@ -17,13 +17,9 @@
 #ifndef __NGX_HTTP_OPENTELEMETRY_MODULE_H
 #define __NGX_HTTP_OPENTELEMETRY_MODULE_H
 
-extern "C" {
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
-}
-
-#include <string>
 #include <stdbool.h>
 #include "../../include/core/api/OpentelemetrySdk.h"
 #include "../../include/core/api/opentelemetry_ngx_api.h"
@@ -44,6 +40,9 @@ enum NGX_HTTP_INDEX {
     NGX_HTTP_MAX_HANDLE_COUNT               // 16
 }ngx_http_index;
 
+typedef struct {
+  ngx_array_t* scriptAttributes;
+}OtelMainConf;
 
 /*
 Function pointer struct for module specific hooks
@@ -55,7 +54,7 @@ mod_handler h[NGX_HTTP_MAX_HANDLE_COUNT];
  Structure for storing module details for mapping module handlers with their respective module
 */
 typedef struct {
-        std::string  name;
+        char* name;
         ngx_uint_t ngx_index;
         ngx_http_phases ph[2];
         mod_handler handler;
@@ -123,9 +122,6 @@ typedef struct{
     ngx_str_t sInstanceId;
 }contextNode;
 
-// static ngx_http_output_header_filter_pt  ngx_http_next_header_filter;
-// static ngx_http_output_body_filter_pt    ngx_http_next_body_filter;
-
 /* Function prototypes */
 static void *ngx_http_opentelemetry_create_loc_conf(ngx_conf_t *cf);
 static char *ngx_http_opentelemetry_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child);
@@ -138,9 +134,6 @@ static void fillResponsePayload(response_payload* res_payload, ngx_http_request_
 static void startMonitoringRequest(ngx_http_request_t* r);
 static void stopMonitoringRequest(ngx_http_request_t* r,
         OTEL_SDK_HANDLE_REQ request_handle_key);
-static OTEL_SDK_STATUS_CODE otel_startInteraction(ngx_http_request_t* r, const char* module_name);
-static void otel_stopInteraction(ngx_http_request_t* r, const char* module_name,
-        OTEL_SDK_HANDLE_REQ request_handle_key);
 static void otel_payload_decorator(ngx_http_request_t* r, OTEL_SDK_ENV_RECORD* propagationHeaders, int count);
 static ngx_flag_t otel_requestHasErrors(ngx_http_request_t* r);
 static ngx_uint_t otel_getErrorCode(ngx_http_request_t* r);
@@ -152,10 +145,7 @@ static void addScriptAttributes(request_payload* req_payload, ngx_http_request_t
     Module specific handler
 */
 static ngx_int_t ngx_http_otel_realip_handler(ngx_http_request_t *r);
-static ngx_int_t ngx_http_otel_index_handler(ngx_http_request_t *r);
-static ngx_int_t ngx_http_otel_random_index_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_otel_log_handler(ngx_http_request_t *r);
-static ngx_int_t ngx_http_otel_try_files_handler(ngx_http_request_t *r);
 
 
 /*

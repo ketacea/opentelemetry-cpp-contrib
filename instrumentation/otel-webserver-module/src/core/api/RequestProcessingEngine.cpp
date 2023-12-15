@@ -296,7 +296,7 @@ OTEL_SDK_API OTEL_SDK_STATUS_CODE RequestProcessingEngine::endInteraction(
 
 OTEL_SDK_STATUS_CODE RequestProcessingEngine::startClientInteraction(
     OTEL_SDK_HANDLE_REQ reqHandle,
-    const InteractionPayload* payload,
+    const ClientInteractionPayload* payload,
     std::unordered_map<std::string, std::string>& propagationHeaders) {
 
     if (!reqHandle) {
@@ -330,8 +330,7 @@ OTEL_SDK_STATUS_CODE RequestProcessingEngine::startClientInteraction(
 
 OTEL_SDK_API OTEL_SDK_STATUS_CODE RequestProcessingEngine::endClientInteraction(
     OTEL_SDK_HANDLE_REQ reqHandle,
-    bool ignoreBackend,
-    EndInteractionPayload *payload) {
+    EndClientInteractionPayload *payload) {
 
     if (!reqHandle) {
         LOG4CXX_ERROR(mLogger, __FUNCTION__ << " " << OTEL_STATUS(handle_pointer_is_null));
@@ -354,7 +353,7 @@ OTEL_SDK_API OTEL_SDK_STATUS_CODE RequestProcessingEngine::endClientInteraction(
     clientSpan->AddAttribute("test", "test");
 
     // If errorCode is 0 or errMsg is empty, there is no error.
-    bool isError = payload->errorCode != 0 && !payload->errorMsg.empty();
+    bool isError = payload->errorCode != 0;
     if (isError) {
         if (payload->errorCode >= HTTP_ERROR_1XX &&   payload->errorCode < HTTP_ERROR_4XX ) {
             clientSpan->SetStatus(StatusCode::Unset);
@@ -363,10 +362,9 @@ OTEL_SDK_API OTEL_SDK_STATUS_CODE RequestProcessingEngine::endClientInteraction(
             if (clientSpan->GetSpanKind() == SpanKind::SERVER)
                 clientSpan->SetStatus(StatusCode::Unset);
             else
-                clientSpan->SetStatus(StatusCode::Error, payload->errorMsg);
-
+                clientSpan->SetStatus(StatusCode::Error, "");
         } else {
-            clientSpan->SetStatus(StatusCode::Error, payload->errorMsg);
+            clientSpan->SetStatus(StatusCode::Error, "");
         }
         clientSpan->AddAttribute("error_code", payload->errorCode);
         LOG4CXX_TRACE(mLogger, "Span updated with error Code: " << payload->errorCode);
