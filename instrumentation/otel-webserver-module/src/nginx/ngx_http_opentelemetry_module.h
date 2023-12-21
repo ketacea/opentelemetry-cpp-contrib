@@ -36,8 +36,8 @@ static const int CONFIG_COUNT = 17; // Number of key value pairs in config
 */
 enum NGX_HTTP_INDEX {
     NGX_HTTP_REALIP_MODULE_INDEX=0,         // 0
-    NGX_HTTP_LOG_MODULE_INDEX,              // 13
-    NGX_HTTP_MAX_HANDLE_COUNT               // 16
+    NGX_HTTP_LOG_MODULE_INDEX,              // 1
+    NGX_HTTP_MAX_HANDLE_COUNT               // 2
 }ngx_http_index;
 
 typedef struct {
@@ -54,12 +54,8 @@ mod_handler h[NGX_HTTP_MAX_HANDLE_COUNT];
  Structure for storing module details for mapping module handlers with their respective module
 */
 typedef struct {
-        char* name;
-        ngx_uint_t ngx_index;
-        ngx_http_phases ph[2];
+        ngx_http_phases phase;
         mod_handler handler;
-        ngx_uint_t mod_phase_index;
-        ngx_uint_t phase_count;
 }otel_ngx_module;
 
 /*
@@ -144,8 +140,8 @@ static void addScriptAttributes(request_payload* req_payload, ngx_http_request_t
 /*
     Module specific handler
 */
-static ngx_int_t ngx_http_otel_realip_handler(ngx_http_request_t *r);
-static ngx_int_t ngx_http_otel_log_handler(ngx_http_request_t *r);
+static ngx_int_t ngx_http_otel_start_handler(ngx_http_request_t *r);
+static ngx_int_t ngx_http_otel_stop_handler(ngx_http_request_t *r);
 
 
 /*
@@ -153,7 +149,6 @@ static ngx_int_t ngx_http_otel_log_handler(ngx_http_request_t *r);
 */
 
 static void traceConfig(ngx_http_request_t *r, ngx_http_opentelemetry_loc_conf_t* conf);
-static ngx_int_t isOTelMonitored(const char* str);
 static char* computeContextName(ngx_http_request_t *r, ngx_http_opentelemetry_loc_conf_t* conf);
 
 /* Filters */

@@ -136,11 +136,11 @@ struct EndInteractionPayload
 
 struct ClientInteractionPayload
 {
-	std::string uri;
+	std::string method;
 
 	ClientInteractionPayload() {}
 
-	ClientInteractionPayload(std::string u) : uri(u)
+	ClientInteractionPayload(std::string m) : method(m)
 	{}
 };
 

@@ -179,14 +179,12 @@ OTEL_SDK_STATUS_CODE stopModuleInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, c
     return res;
 }
 
-
-OTEL_SDK_STATUS_CODE startClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, OTEL_SDK_ENV_RECORD* propagationHeaders, int *ix)
+OTEL_SDK_STATUS_CODE startClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, const char* method, OTEL_SDK_ENV_RECORD* propagationHeaders, int *ix)
 {
     OTEL_SDK_STATUS_CODE res = OTEL_SUCCESS;
     std::unordered_map<std::string, std::string> pHeaders;
 
-    // todo uri span name
-    std::unique_ptr<otel::core::ClientInteractionPayload> payload(new otel::core::ClientInteractionPayload(""));
+    std::unique_ptr<otel::core::ClientInteractionPayload> payload(new otel::core::ClientInteractionPayload(std::string(method)));
     res = wsAgent.startClientInteraction(req_handle_key, payload.get(), pHeaders);
 
     if (OTEL_ISSUCCESS(res))
@@ -208,9 +206,9 @@ OTEL_SDK_STATUS_CODE startClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, 
     return res;
 }
 
-OTEL_SDK_STATUS_CODE stopClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, char* peer_name)
+OTEL_SDK_STATUS_CODE stopClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, char* peer_name, unsigned int errCode)
 {
-    std::unique_ptr<otel::core::EndClientInteractionPayload> payload(new otel::core::EndClientInteractionPayload("", 0));
+    std::unique_ptr<otel::core::EndClientInteractionPayload> payload(new otel::core::EndClientInteractionPayload(peer_name, errCode));
     OTEL_SDK_STATUS_CODE res = wsAgent.endClientInteraction(req_handle_key, payload.get());
 
     return res;
