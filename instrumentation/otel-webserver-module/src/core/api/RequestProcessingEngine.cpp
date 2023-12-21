@@ -103,7 +103,6 @@ OTEL_SDK_STATUS_CODE RequestProcessingEngine::startRequest(
         const std::string key = std::string(http_request_header) + std::string(itr->first);
         const std::string value = std::string(itr->second);
         span->AddAttribute(key, value);
-        LOG4CXX_ERROR(mLogger, "add header: " << key << ", value: " << value);
     }
 
     auto& attributes = payload->get_attributes();
@@ -260,7 +259,7 @@ OTEL_SDK_API OTEL_SDK_STATUS_CODE RequestProcessingEngine::endInteraction(
     auto interactionSpan = rContext->lastActiveInteraction();
 
     // If errorCode is 0 or errMsg is empty, there is no error.
-    bool isError = payload->errorCode != 0 && !payload->errorMsg.empty();
+    bool isError = payload->errorCode != 200 && !payload->errorMsg.empty();
     if (isError) {
         if (payload->errorCode >= HTTP_ERROR_1XX &&   payload->errorCode < HTTP_ERROR_4XX ) {
             interactionSpan->SetStatus(StatusCode::Unset);
@@ -314,13 +313,11 @@ OTEL_SDK_STATUS_CODE RequestProcessingEngine::startClientInteraction(
     // Create client span for this interaction. And set it in RequestContext object.
     otel::core::sdkwrapper::OtelKeyValueMap keyValueMap;
 
-    // TODO : confirm and update name later
-//    std::string uri(payload->get_uri());
-//    std::string spanName = m_spanNamer->getSpanName(uri);
-    keyValueMap["interactionType"] = "REQ";
-    auto interactionSpan = m_sdkWrapper->CreateSpan("GET", SpanKind::CLIENT, keyValueMap);
+    std::string method(payload->method);
+    auto interactionSpan = m_sdkWrapper->CreateSpan(method, SpanKind::CLIENT, keyValueMap);
     LOG4CXX_TRACE(mLogger, "Client Span started with SpanName: " << "spanName"
         << " Span Id: " << interactionSpan.get());
+    interactionSpan->AddAttribute(kAttrHTTPMethod, method);
     m_sdkWrapper->PopulatePropagationHeaders(propagationHeaders);
 
     // Add the interaction to the request context.
@@ -350,10 +347,8 @@ OTEL_SDK_API OTEL_SDK_STATUS_CODE RequestProcessingEngine::endClientInteraction(
         LOG4CXX_TRACE(mLogger, __FUNCTION__ << " " << OTEL_STATUS(invalid_context));
         return OTEL_STATUS(invalid_context);
     }
-    clientSpan->AddAttribute("test", "test");
-
     // If errorCode is 0 or errMsg is empty, there is no error.
-    bool isError = payload->errorCode != 0;
+    bool isError = payload->errorCode !=200;
     if (isError) {
         if (payload->errorCode >= HTTP_ERROR_1XX &&   payload->errorCode < HTTP_ERROR_4XX ) {
             clientSpan->SetStatus(StatusCode::Unset);
@@ -366,10 +361,14 @@ OTEL_SDK_API OTEL_SDK_STATUS_CODE RequestProcessingEngine::endClientInteraction(
         } else {
             clientSpan->SetStatus(StatusCode::Error, "");
         }
-        clientSpan->AddAttribute("error_code", payload->errorCode);
         LOG4CXX_TRACE(mLogger, "Span updated with error Code: " << payload->errorCode);
     } else {
         clientSpan->SetStatus(StatusCode::Ok);
+    }
+    clientSpan->AddAttribute(kAttrHTTPStatusCode, payload->errorCode);
+    std::string peerName(payload -> peerName);
+    if (!peerName.empty()) {
+        clientSpan->AddAttribute(kAttrNETPeerName, peerName);
     }
 
     LOG4CXX_TRACE(mLogger, "Ending Span with id: " << clientSpan.get());

@@ -54,6 +54,17 @@ typedef struct {
     int attributes_count;
 }request_payload;
 
+/* Structure for the request payload */
+typedef struct {
+    const char* uri;
+    const char* server_name;
+    const char* scheme;
+    const char* flavor;
+    const char* hostname;
+    const char* protocol;
+    const char* request_method;
+}client_request_payload;
+
 typedef struct {
     http_headers* response_headers;
     int response_headers_count;
@@ -80,8 +91,8 @@ OTEL_SDK_STATUS_CODE opentelemetry_core_init(OTEL_SDK_ENV_RECORD* env, unsigned 
 OTEL_SDK_STATUS_CODE startRequest(const char* wscontext, request_payload* req_payload, OTEL_SDK_HANDLE_REQ* reqHandle);
 OTEL_SDK_STATUS_CODE startModuleInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, const char* module_name, const char* stage, bool resolveBackends, OTEL_SDK_ENV_RECORD* propagationHeaders, int* ix);
 OTEL_SDK_STATUS_CODE stopModuleInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, const char* backendName, const char* backendType, unsigned int err_code, const char* msg);
-OTEL_SDK_STATUS_CODE startClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, OTEL_SDK_ENV_RECORD* propagationHeaders, int* ix);
-OTEL_SDK_STATUS_CODE stopClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, char* peer_name);
+OTEL_SDK_STATUS_CODE startClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, const char* method, OTEL_SDK_ENV_RECORD* propagationHeaders, int* ix);
+OTEL_SDK_STATUS_CODE stopClientInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, char* peer_name, unsigned int errCode);
 OTEL_SDK_STATUS_CODE endRequest(OTEL_SDK_HANDLE_REQ req_handle_key, const char* errMsg, response_payload* payload);
 void opentelemetry_core_term();
 
