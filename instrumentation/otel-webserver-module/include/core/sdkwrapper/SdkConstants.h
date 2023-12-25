@@ -35,6 +35,7 @@ const std::string kAttrHTTPUrl                = "http.url";
 const std::string kAttrHTTPFlavor             = "http.flavor";
 const std::string kAttrHTTPClientIP           = "http.client_ip";
 const std::string kAttrHTTPStatusCode         = "http.status_code";
+const std::string kAttrHTTPUserAgent         = "http.user_agent";
 const std::string kAttrNETHostPort            = "net.host.port";
 const std::string kAttrNETPeerName            = "net.peer.name";
 const std::string kAttrRequestProtocol        = "request_protocol";
