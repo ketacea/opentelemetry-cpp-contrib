@@ -100,9 +100,13 @@ OTEL_SDK_STATUS_CODE RequestProcessingEngine::startRequest(
 
     auto& request_headers = payload->get_request_headers();
     for (auto itr = request_headers.begin(); itr != request_headers.end(); itr++) {
-        const std::string key = std::string(http_request_header) + std::string(itr->first);
+        std::string first = std::string(itr->first);
+        const std::string key = std::string(http_request_header) + first;
         const std::string value = std::string(itr->second);
         span->AddAttribute(key, value);
+        if (first == "User-Agent") {
+            span->AddAttribute(kAttrHTTPUserAgent, value);
+        }
     }
 
     auto& attributes = payload->get_attributes();
