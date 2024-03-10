@@ -235,6 +235,13 @@ static ngx_command_t ngx_http_opentelemetry_commands[] = {
       offsetof(ngx_http_opentelemetry_loc_conf_t, nginxModuleOtelSampler),
       NULL},
 
+    { ngx_string("NginxModuleOtelSamplerRatio"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_str_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_opentelemetry_loc_conf_t, nginxModuleOtelSamplerRatio),
+      NULL},
+
     { ngx_string("NginxModuleServiceName"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_str_slot,
@@ -472,6 +479,7 @@ static char* ngx_http_opentelemetry_merge_loc_conf(ngx_conf_t *cf, void *parent,
     ngx_conf_merge_str_value(conf->nginxModuleOtelSslCertificatePath, prev->nginxModuleOtelSslCertificatePath, "");
     ngx_conf_merge_str_value(conf->nginxModuleOtelSpanProcessor, prev->nginxModuleOtelSpanProcessor, "");
     ngx_conf_merge_str_value(conf->nginxModuleOtelSampler, prev->nginxModuleOtelSampler, "");
+    ngx_conf_merge_str_value(conf->nginxModuleOtelSamplerRatio, prev->nginxModuleOtelSamplerRatio, "");
     ngx_conf_merge_str_value(conf->nginxModuleServiceName, prev->nginxModuleServiceName, "");
     ngx_conf_merge_str_value(conf->nginxModuleServiceNamespace, prev->nginxModuleServiceNamespace, "");
     ngx_conf_merge_str_value(conf->nginxModuleServiceInstanceId, prev->nginxModuleServiceInstanceId, "");
@@ -1008,6 +1016,11 @@ static ngx_flag_t ngx_initialize_opentelemetry(ngx_http_request_t *r)
         env_config[ix].value = (const char*)(conf->nginxModuleOtelSampler).data;
         ++ix;
 
+        // Otel Sampler Ratio
+        env_config[ix].name = OTEL_SDK_ENV_OTEL_SAMPLER_RATIO;
+        env_config[ix].value = (const char*)(conf->nginxModuleOtelSamplerRatio).data;
+        ++ix;
+
         // Service Namespace
         env_config[ix].name = OTEL_SDK_ENV_SERVICE_NAMESPACE;
         env_config[ix].value = (const char*)(conf->nginxModuleServiceNamespace).data;
@@ -1505,6 +1518,7 @@ static void traceConfig(ngx_http_request_t *r, ngx_http_opentelemetry_loc_conf_t
                                                       "(OtelSpanExporter=\"%s\")"
                                                       "(OtelSpanProcessor=\"%s\")"
                                                       "(OtelSampler=\"%s\")"
+                                                      "(OtelSamplerRatio=\"%s\")"
                                                       "(ServiceNamespace=\"%s\")"
                                                       "(ServiceName=\"%s\")"
                                                       "(ServiceInstanceId=\"%s\")"
@@ -1528,6 +1542,7 @@ static void traceConfig(ngx_http_request_t *r, ngx_http_opentelemetry_loc_conf_t
                                                       (conf->nginxModuleOtelSpanExporter).data,
                                                       (conf->nginxModuleOtelSpanProcessor).data,
                                                       (conf->nginxModuleOtelSampler).data,
+                                                      (conf->nginxModuleOtelSamplerRatio).data,
                                                       (conf->nginxModuleServiceNamespace).data,
                                                       (conf->nginxModuleServiceName).data,
                                                       (conf->nginxModuleServiceInstanceId).data,

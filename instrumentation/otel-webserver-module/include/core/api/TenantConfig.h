@@ -52,6 +52,7 @@ public:
     const unsigned getOtelExportTimeoutMillis() const {return otelExportTimeoutMillis;}
     const unsigned getOtelMaxExportBatchSize() const {return otelMaxExportBatchSize;}
     const std::string& getOtelSamplerType() const {return otelSamplerType;}
+    const std::string& getOtelSamplerRatio() const {return otelSamplerRatio;}
     const bool getOtelSslEnabled() const { return otelSslEnabled; }
     const std::string& getOtelSslCertPath() const { return otelSslCertPath; }
 
@@ -69,6 +70,7 @@ public:
     void setOtelExportTimeoutMillis(const unsigned int otelExportTimeoutMillis) { this->otelExportTimeoutMillis = otelExportTimeoutMillis; }
     void setOtelMaxExportBatchSize(const unsigned int otelMaxExportBatchSize) {this->otelMaxExportBatchSize = otelMaxExportBatchSize; }
     void setOtelSamplerType(const std::string& otelSamplerType) { this->otelSamplerType = otelSamplerType; }
+    void setOtelSamplerRatio(const std::string& otelSamplerRatio) { this->otelSamplerRatio = otelSamplerRatio; }
     void setOtelSslEnabled(const bool& otelSslEnabled) { this->otelSslEnabled = otelSslEnabled; }
     void setOtelSslCertPath(const std::string& otelSslCertPath) { this->otelSslCertPath = otelSslCertPath; }
 
@@ -88,6 +90,7 @@ private:
 
     std::string otelProcessorType;
     std::string otelSamplerType;
+    std::string otelSamplerRatio;
 
     unsigned otelMaxQueueSize;
     unsigned otelScheduledDelayMillis;
@@ -109,6 +112,7 @@ inline std::ostream& operator<< (std::ostream &os, const otel::core::TenantConfi
         << "\n OtelExporterEndpoint             " << config.getOtelExporterEndpoint()
         << "\n OtelProcessorType                " << config.getOtelProcessorType()
         << "\n OtelSamplerType                  " << config.getOtelSamplerType()
+        << "\n OtelSamplerRatio                  " << config.getOtelSamplerRatio()
         << "\n OtelSslEnabled                   " << config.getOtelSslEnabled()
         << "\n OtelSslCertPath                  " << config.getOtelSslCertPath()
         << "\n OtelExportOtlpHeaders            " << config.getOtelExporterOtlpHeaders()
