@@ -1008,6 +1008,11 @@ static ngx_flag_t ngx_initialize_opentelemetry(ngx_http_request_t *r)
         env_config[ix].value = (const char*)(conf->nginxModuleOtelSampler).data;
         ++ix;
 
+        // Otel Sampler Ratio
+        env_config[ix].name = OTEL_SDK_ENV_OTEL_SAMPLER_RATIO;
+        env_config[ix].value = (const char*)(conf->nginxModuleOtelSamplerRatio).data;
+        ++ix;
+        
         // Service Namespace
         env_config[ix].name = OTEL_SDK_ENV_SERVICE_NAMESPACE;
         env_config[ix].value = (const char*)(conf->nginxModuleServiceNamespace).data;

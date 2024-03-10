@@ -208,7 +208,13 @@ OtelSampler SdkHelperFactory::GetSampler(
     if (type == ALWAYS_OFF_SAMPLER) {
         sampler.reset(new sdk::trace::AlwaysOffSampler);
     } else if (type == TRACE_ID_RATIO_BASED_SAMPLER) { // TODO
-        ;
+        auto ratio = config->getOtelSamplerRatio();
+        try {
+            sampler.reset(new sdk::trace::TraceIdRatioBasedSampler(std::stod(ratio)));
+        } catch (const std::invalid_argument& e) {
+            LOG4CXX_WARN(mLogger, "Error converting string to double: " << e.what());
+            sampler.reset(new sdk::trace::TraceIdRatioBasedSampler(1));
+        }
     } else if (type == PARENT_BASED_SAMPLER) { // TODO
         ;
     } else {
