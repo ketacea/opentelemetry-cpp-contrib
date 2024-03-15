@@ -212,7 +212,7 @@ OtelSampler SdkHelperFactory::GetSampler(
         try {
             sampler.reset(new sdk::trace::TraceIdRatioBasedSampler(std::stod(ratio)));
         } catch (const std::invalid_argument& e) {
-            LOG4CXX_WARN(mLogger, "Error converting string to double: " << e.what());
+            LOG4CXX_WARN(mLogger, "Error: " << e.what() << ". converting string failed: " << ratio);
             sampler.reset(new sdk::trace::TraceIdRatioBasedSampler(1));
         }
     } else if (type == PARENT_BASED_SAMPLER) { // TODO
