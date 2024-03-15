@@ -1,8 +1,5 @@
 FROM alpine:3.11.6
 
-ENV http_proxy=http://172.28.224.1:7890
-ENV https_proxy=http://172.28.224.1:7890
-
 RUN apk update && apk upgrade
 RUN apk add --no-cache         \
     build-base	               \
