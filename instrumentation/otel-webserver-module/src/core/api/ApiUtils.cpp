@@ -20,6 +20,8 @@
 #include "AgentLogger.h"
 #include <api/TenantConfig.h>
 #include <boost/lexical_cast.hpp>
+#include <cstdlib>
+#include <iostream>
 #ifndef _WIN32
 #include <dlfcn.h>
 #endif
@@ -40,29 +42,7 @@ OTEL_SDK_STATUS_CODE ApiUtils::init_boilerplate()
 {
     try
     {
-        boost::filesystem::path logConfigPath;
-
-        char* envLogConfigPath = getenv(OTEL_SDK_ENV_LOG_CONFIG_PATH);
-        if(envLogConfigPath)
-        {
-            logConfigPath = envLogConfigPath;
-        }
-        else
-        {
-            logConfigPath =
-                    getSDKInstallPath()
-                    / boost::filesystem::path("conf")
-                    / boost::filesystem::path("opentelemetry_sdk_log4cxx.xml");
-        }
-
-        boost::system::error_code ec;
-        if (!boost::filesystem::exists(logConfigPath, ec)) // no throw version of exists()
-        {
-            std::cerr << (boost::format( "Error: %1%: Invalid logging config file: %2%")
-                    % BOOST_CURRENT_FUNCTION % logConfigPath) << std::endl;
-            return OTEL_STATUS(no_log_config);
-        }
-
+        char* logConfigPath = "/opt/opentelemetry-webserver/agent/conf/appdynamics_sdk_log4cxx.xml";
         bool res = initLogging(logConfigPath);
         if(!res)
         {
@@ -76,7 +56,7 @@ OTEL_SDK_STATUS_CODE ApiUtils::init_boilerplate()
         }
 
         LOG4CXX_INFO(ApiUtils::apiLogger,
-        	"API logger initialized using log configuration file: " << logConfigPath.string());
+        	"API logger initialized using log configuration file: " << logConfigPath);
 
         ApiUtils::apiUserLogger = getLogger(OTEL_LOG_API_USER_LOGGER);
         if(!ApiUtils::apiUserLogger)
@@ -84,56 +64,62 @@ OTEL_SDK_STATUS_CODE ApiUtils::init_boilerplate()
             return OTEL_STATUS(log_init_failed);
         }
         LOG4CXX_INFO(ApiUtils::apiUserLogger,
-        	"API User logger initialized using log configuration file:" << logConfigPath.string());
+        	"API User logger initialized using log configuration file:" << logConfigPath);
 
         std::atexit(cleanup);
     }
+    catch(const std::exception& e)
+    {
+        std::cerr << "====== [init_boilerplate] Caught exception: " << e.what() << std::endl;
+        return OTEL_STATUS(fail);
+    }
     catch(...)
     {
+        std::cerr << "====== [init_boilerplate] Caught unknown exception" << std::endl;
         return OTEL_STATUS(fail);
     }
 
     return OTEL_SUCCESS;
 }
 
-boost::filesystem::path ApiUtils::getSDKInstallPath()
-{
-#ifdef _WIN32
-    char path[FILENAME_MAX];
-    HMODULE hm = NULL;
-    if (!(hm = GetModuleHandleA("opentelemetry_webserver_sdk")))
-    {
-        int ret = GetLastError();
-        // Logger not initialized it
-        fprintf(stderr, "GetModuleHandle returned %d\n", ret);
-    }
-    GetModuleFileNameA(hm, path, sizeof(path));
-    boost::filesystem::path SOpath(path);
-#else
-    Dl_info dl_info = { 0 };
-    dladdr((void*)ApiUtils::getSDKInstallPath, &dl_info);
+// boost::filesystem::path ApiUtils::getSDKInstallPath()
+// {
+// #ifdef _WIN32
+//     char path[FILENAME_MAX];
+//     HMODULE hm = NULL;
+//     if (!(hm = GetModuleHandleA("opentelemetry_webserver_sdk")))
+//     {
+//         int ret = GetLastError();
+//         // Logger not initialized it
+//         fprintf(stderr, "GetModuleHandle returned %d\n", ret);
+//     }
+//     GetModuleFileNameA(hm, path, sizeof(path));
+//     boost::filesystem::path SOpath(path);
+// #else
+//     Dl_info dl_info = { 0 };
+//     dladdr((void*)ApiUtils::getSDKInstallPath, &dl_info);
 
-    boost::filesystem::path SOpath(dl_info.dli_fname);
-#endif
+//     boost::filesystem::path SOpath(dl_info.dli_fname);
+// #endif
 
-    if (!boost::filesystem::exists(SOpath))
-    {
-        std::cerr << (boost::format("Error: %1%: Invalid shared library path: %2%")
-                % BOOST_CURRENT_FUNCTION % SOpath) << std::endl;
-        return boost::filesystem::path();
-    }
+//     if (!boost::filesystem::exists(SOpath))
+//     {
+//         std::cerr << (boost::format("Error: %1%: Invalid shared library path: %2%")
+//                 % BOOST_CURRENT_FUNCTION % SOpath) << std::endl;
+//         return boost::filesystem::path();
+//     }
 
-    boost::filesystem::path installPath = SOpath.parent_path().parent_path().parent_path();
-    if (!boost::filesystem::exists(installPath))
-    {
-        std::cerr << (boost::format("Error: %1%: Cannot get install path from shared library path: %2%")
-                % BOOST_CURRENT_FUNCTION % SOpath) << std::endl;
-        return boost::filesystem::path();
-    }
+//     boost::filesystem::path installPath = SOpath.parent_path().parent_path().parent_path();
+//     if (!boost::filesystem::exists(installPath))
+//     {
+//         std::cerr << (boost::format("Error: %1%: Cannot get install path from shared library path: %2%")
+//                 % BOOST_CURRENT_FUNCTION % SOpath) << std::endl;
+//         return boost::filesystem::path();
+//     }
 
-    installPath = boost::filesystem::canonical(installPath);
-    return installPath;
-}
+//     installPath = boost::filesystem::canonical(installPath);
+//     return installPath;
+// }
 
 OTEL_SDK_STATUS_CODE ApiUtils::ReadFromPassedSettings(
         OTEL_SDK_ENV_RECORD* envIn,

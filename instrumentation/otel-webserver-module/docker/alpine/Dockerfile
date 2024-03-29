@@ -194,6 +194,7 @@ RUN cp -r /dependencies /otel-webserver-module/ \
 RUN cd /otel-webserver-module/build/ \
     && tar zxvf opentelemetry-webserver-sdk-x64-linux.tgz \
     && cp /usr/lib/libstdc++.so.6.0.28 opentelemetry-webserver-sdk/sdk_lib/lib/libstdc++.so.6 \
-    && cd opentelemetry-webserver-sdk && ./install.sh && cd .. \
+    && mv opentelemetry-webserver-sdk/conf/opentelemetry_sdk_log4cxx.xml.template opentelemetry-webserver-sdk/conf/appdynamics_sdk_log4cxx.xml.template \
+    && sed -i 's/opentelemetry_sdk_log4cxx/appdynamics_sdk_log4cxx/' opentelemetry-webserver-sdk/install.sh\
     && rm opentelemetry-webserver-sdk-x64-linux.tgz \
     && tar zcvf opentelemetry-webserver-sdk-x64-linux.tgz opentelemetry-webserver-sdk

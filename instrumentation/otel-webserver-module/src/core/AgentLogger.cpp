@@ -49,19 +49,13 @@ const char* LogContext::CUSTOM_METRICS = "agent.custom_metrics";
 
 log4cxx::LevelPtr DebugLoggingManager::m_previousLogLevel;
 
-bool initLogging(const boost::filesystem::path& configFilePath)
+bool initLogging(const char* configFilePath)
 {
-    if (!configFilePath.is_absolute() || !boost::filesystem::exists(configFilePath))
-    {
-        logStartupError(boost::format("Log config file path invalid: %1%") % configFilePath.string());
-        return false;
-    }
-
     std::string pidStr(boost::lexical_cast<std::string>(getpid()));
     MDC::put("pid", pidStr);
     //MDC::put("version", std::string(AGENT_VERSION));
 
-    DOMConfigurator::configure(configFilePath.native());
+    DOMConfigurator::configure(configFilePath);
 
     return true;
 }

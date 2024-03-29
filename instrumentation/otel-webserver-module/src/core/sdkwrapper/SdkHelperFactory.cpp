@@ -47,6 +47,7 @@ namespace {
   constexpr const char* ALWAYS_OFF_SAMPLER = "always_off";
   constexpr const char* PARENT_BASED_SAMPLER = "parent";
   constexpr const char* TRACE_ID_RATIO_BASED_SAMPLER = "trace_id_ratio";
+  constexpr const char* PARENTBASED_TRACEID_RATIO_SAMPLER = "parentbased_traceidratio";
 }
 
 SdkHelperFactory::SdkHelperFactory(
@@ -200,34 +201,42 @@ OtelSpanProcessor SdkHelperFactory::GetSpanProcessor(
 }
 
 OtelSampler SdkHelperFactory::GetSampler(
-    std::shared_ptr<TenantConfig> config)
+        std::shared_ptr<TenantConfig> config)
 {
-    auto sampler = OtelSampler{};
     auto type = config->getOtelSamplerType();
+    double ratio;
+    try {
+        auto ratioStr = config->getOtelSamplerRatio();
+        ratio = std::stod(ratioStr);
+    } catch (const std::invalid_argument& e) {
+        LOG4CXX_WARN(mLogger, "Error: " << e.what() << ". converting string failed: " << ratio);
+        ratio = 1.0;
+    }
+    // Parent Based Samplers
+    if(type == PARENTBASED_TRACEID_RATIO_SAMPLER){
+        std::shared_ptr<sdk::trace::Sampler> sampler;
+        sampler = std::make_shared<sdk::trace::TraceIdRatioBasedSampler>(ratio);
+        LOG4CXX_INFO(mLogger, "Sampler created with SamplerType : " << type);
+        return std::unique_ptr<sdk::trace::ParentBasedSampler>(new sdk::trace::ParentBasedSampler(sampler));
+    }
 
-    if (type == ALWAYS_OFF_SAMPLER) {
-        sampler.reset(new sdk::trace::AlwaysOffSampler);
-    } else if (type == TRACE_ID_RATIO_BASED_SAMPLER) { // TODO
-        auto ratio = config->getOtelSamplerRatio();
-        try {
-            sampler.reset(new sdk::trace::TraceIdRatioBasedSampler(std::stod(ratio)));
-        } catch (const std::invalid_argument& e) {
-            LOG4CXX_WARN(mLogger, "Error: " << e.what() << ". converting string failed: " << ratio);
-            sampler.reset(new sdk::trace::TraceIdRatioBasedSampler(1));
-        }
-    } else if (type == PARENT_BASED_SAMPLER) { // TODO
-        ;
-    } else {
-        if (type != ALWAYS_ON_SAMPLER) {
-          // default is always_on sampler
-          LOG4CXX_WARN(mLogger, "Received unknown sampler type: " << type << ". Will create default(always_on) sampler");
-          type = ALWAYS_ON_SAMPLER;
-        }
-        sampler.reset(new sdk::trace::AlwaysOnSampler);
+    // Non-Parent Based Samplers
+    std::unique_ptr<sdk::trace::Sampler> sampler;
+
+    if(type == ALWAYS_OFF_SAMPLER) {
+        sampler.reset(new sdk::trace::AlwaysOffSampler());
+    }
+    else if(type == TRACE_ID_RATIO_BASED_SAMPLER) {
+        sampler.reset(new sdk::trace::TraceIdRatioBasedSampler(ratio));
+    }
+    // DEFAULT - ALWAYS ON
+    else{
+        type = ALWAYS_ON_SAMPLER;
+        sampler.reset(new sdk::trace::AlwaysOnSampler());
     }
 
     LOG4CXX_INFO(mLogger, "Sampler created with SamplerType : " <<
-        type);
+                                                                type);
     return sampler;
 }
 
