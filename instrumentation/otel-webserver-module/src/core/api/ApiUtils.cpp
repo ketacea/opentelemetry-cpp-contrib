@@ -42,7 +42,7 @@ OTEL_SDK_STATUS_CODE ApiUtils::init_boilerplate()
 {
     try
     {
-        char* logConfigPath = "/opt/opentelemetry-webserver/agent/conf/appdynamics_sdk_log4cxx.xml";
+        const char* logConfigPath = "/opt/opentelemetry-webserver/agent/conf/appdynamics_sdk_log4cxx.xml";
         bool res = initLogging(logConfigPath);
         if(!res)
         {
@@ -81,45 +81,6 @@ OTEL_SDK_STATUS_CODE ApiUtils::init_boilerplate()
 
     return OTEL_SUCCESS;
 }
-
-// boost::filesystem::path ApiUtils::getSDKInstallPath()
-// {
-// #ifdef _WIN32
-//     char path[FILENAME_MAX];
-//     HMODULE hm = NULL;
-//     if (!(hm = GetModuleHandleA("opentelemetry_webserver_sdk")))
-//     {
-//         int ret = GetLastError();
-//         // Logger not initialized it
-//         fprintf(stderr, "GetModuleHandle returned %d\n", ret);
-//     }
-//     GetModuleFileNameA(hm, path, sizeof(path));
-//     boost::filesystem::path SOpath(path);
-// #else
-//     Dl_info dl_info = { 0 };
-//     dladdr((void*)ApiUtils::getSDKInstallPath, &dl_info);
-
-//     boost::filesystem::path SOpath(dl_info.dli_fname);
-// #endif
-
-//     if (!boost::filesystem::exists(SOpath))
-//     {
-//         std::cerr << (boost::format("Error: %1%: Invalid shared library path: %2%")
-//                 % BOOST_CURRENT_FUNCTION % SOpath) << std::endl;
-//         return boost::filesystem::path();
-//     }
-
-//     boost::filesystem::path installPath = SOpath.parent_path().parent_path().parent_path();
-//     if (!boost::filesystem::exists(installPath))
-//     {
-//         std::cerr << (boost::format("Error: %1%: Cannot get install path from shared library path: %2%")
-//                 % BOOST_CURRENT_FUNCTION % SOpath) << std::endl;
-//         return boost::filesystem::path();
-//     }
-
-//     installPath = boost::filesystem::canonical(installPath);
-//     return installPath;
-// }
 
 OTEL_SDK_STATUS_CODE ApiUtils::ReadFromPassedSettings(
         OTEL_SDK_ENV_RECORD* envIn,

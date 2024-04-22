@@ -217,7 +217,7 @@ OtelSampler SdkHelperFactory::GetSampler(
         std::shared_ptr<sdk::trace::Sampler> sampler;
         sampler = std::make_shared<sdk::trace::TraceIdRatioBasedSampler>(ratio);
         LOG4CXX_INFO(mLogger, "Sampler created with SamplerType : " << type);
-        return std::unique_ptr<sdk::trace::ParentBasedSampler>(new sdk::trace::ParentBasedSampler(sampler));
+        return std::make_unique<sdk::trace::ParentBasedSampler>(sampler);
     }
 
     // Non-Parent Based Samplers
@@ -235,8 +235,7 @@ OtelSampler SdkHelperFactory::GetSampler(
         sampler.reset(new sdk::trace::AlwaysOnSampler());
     }
 
-    LOG4CXX_INFO(mLogger, "Sampler created with SamplerType : " <<
-                                                                type);
+    LOG4CXX_INFO(mLogger, "Sampler created with SamplerType : " << type);
     return sampler;
 }
 
