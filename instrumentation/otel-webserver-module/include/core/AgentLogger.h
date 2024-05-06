@@ -27,7 +27,7 @@
 
 typedef log4cxx::LoggerPtr AgentLogger;
 
-bool initLogging(const boost::filesystem::path& configFilePath);
+bool initLogging(const char* configFilePath);
 AgentLogger getLogger(const std::string& name);
 
 /* this is cloned from log4cxx locationinfo.h */

@@ -757,21 +757,24 @@ static void otel_payload_decorator(ngx_http_request_t* r, OTEL_SDK_ENV_RECORD* p
    ngx_table_elt_t            *h;
    ngx_http_header_t          *hh;
    ngx_http_core_main_conf_t  *cmcf;
-   ngx_uint_t       nelts;
-
-   part = &r->headers_in.headers.part;
-   header = (ngx_table_elt_t*)part->elts;
-   nelts = part->nelts;
 
    for(int i=0; i<count; i++){
-
        int header_found=0;
-       for(ngx_uint_t j = 0; j<nelts; j++){
+       part = &r->headers_in.headers.part;
+       header = (ngx_table_elt_t*)part->elts;
+       for(ngx_uint_t j = 0;; j++){
+           if (j >= part->nelts) {
+               if (part->next == NULL) {
+                   break;
+               }
+               part = part->next;
+               header = (ngx_table_elt_t*)part->elts;
+               j = 0;
+           }
+
            h = &header[j];
            if(strcmp(httpHeaders[i], (char *)h->key.data)==0){
-
                header_found=1;
-
                if(h->key.data)
                     ngx_pfree(r->pool, h->key.data);
                if(h->value.data)
@@ -1691,11 +1694,29 @@ static void fillRequestPayload(request_payload* req_payload, ngx_http_request_t*
     req_payload->request_headers = ngx_pcalloc(r->pool, nelts * sizeof(http_headers));
     int request_headers_idx = 0;
     int propagation_headers_idx = 0;
+
     for (ngx_uint_t j = 0; j < nelts; j++) {
+        h = &header[j];
+        req_payload->request_headers[request_headers_idx].name = (char*)(h->key).data;
+        req_payload->request_headers[request_headers_idx].value = (char*)(h->value).data;
+        if (req_payload->request_headers[request_headers_idx].value == NULL) {
+            req_payload->request_headers[request_headers_idx].value = "";
+        }
+        request_headers_idx++;
+    }
+
+    for (ngx_uint_t j = 0 ;; j++) {
+        if (j >= part->nelts) {
+            if (part->next == NULL) {
+                break;
+            }
+            part = part->next;
+            header = (ngx_table_elt_t*)part->elts;
+            j = 0;
+        }
 
         h = &header[j];
         for (long unsigned int i = 0; i < headers_len; i++) {
-
             if (strcmp((char *)h->key.data, httpHeaders[i]) == 0) {
                 req_payload->propagation_headers[propagation_headers_idx].name = (char *)httpHeaders[i];
                 req_payload->propagation_headers[propagation_headers_idx].value = (char*)(h->value).data;
@@ -1707,12 +1728,6 @@ static void fillRequestPayload(request_payload* req_payload, ngx_http_request_t*
             }
         }
 
-        req_payload->request_headers[request_headers_idx].name = (char*)(h->key).data;
-        req_payload->request_headers[request_headers_idx].value = (char*)(h->value).data;
-        if (req_payload->request_headers[request_headers_idx].value == NULL) {
-            req_payload->request_headers[request_headers_idx].value = "";
-        }
-        request_headers_idx++;
     }
 
     req_payload->propagation_count = propagation_headers_idx;

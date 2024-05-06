@@ -53,7 +53,7 @@ public:
     static AgentLogger apiLogger;
     static AgentLogger apiUserLogger;
 
-    static boost::filesystem::path getSDKInstallPath();
+    // static boost::filesystem::path getSDKInstallPath();
     static void cleanup();
     /*
     *   TODO: Following functions will be implemented while doing agent init and term
